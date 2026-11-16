@@ -196,3 +196,22 @@ sumedipose --root "D:\Research\PublicDatasets\SUMediPose\raw" --subject S6 --ste
 - For zero index shift, detect an 8×6 checkerboard and independently triangulate its corners from original stereo intrinsics/extrinsics (no refitting). Reprojection back into the **same two images** gives a **stereo self-consistency** residual in pixels. The reconstructed checkerboard's neighboring edge lengths and planarity are measured in arbitrary **source chessboard-square units**.
 - A low two-view reprojection residual is **not independently measured 3D physical truth**, and an edge-length residual in board-square units must never be called a millimetre or clinical angle error. No common Vicon/camera clock or measured physical board square size is verified. Differences may reflect board detection, lens distortion, calibration stability and capture mismatch.
 - The source and any derived subject-level geometry files stay outside this public Git history. The code returns *aggregate scalars only*, without images, detected corners or reconstructed per-frame point clouds. No model training, new image download or clinical analysis is triggered.
+
+## Camera-pair lens vs relative-extrinsic uncertainty audit
+
+This local-only diagnostic is intended for a camera pair with **large held-out epipolar residuals**, e.g. rear C6–C5. It separates two alternative explanations: inaccurate *individual-camera* checkerboard detection/pose fitting versus inconsistent *between-camera* relative rotation/translation. The measurements are diagnostic, not causal proof.
+
+```powershell
+sumedipose --root "D:\Research\PublicDatasets\SUMediPose\raw" --subject S6 --paired-camera C5 --calibration-uncertainty --external-frames-zip "D:\Research\PublicDatasets\SUMediPose\source_calibration\external_frames\S6.zip" --calibration-uncertainty-json "D:\Research\PublicDatasets\SUMediPose\analysis\S6_G65_calibration_uncertainty.json"
+```
+
+The audit uses only the **non-fit 8×6 checkerboard JPEG pairs** and freezes source stereo `R/T`, intrinsics and lens distortion coefficients. It applies source JPEG rotation and the checkerboard corner symmetry selected using fitting frames. For each pair of held-out images it reports:
+
+- Sampson epipolar residual with lens coefficients applied versus without rectifying lens distortion; the change quantifies the distortion correction's effect rather than assuming it fixes the camera relationship.
+- The pixel shift due to lens correction in **each camera**, and the checkerboard PnP reprojection residual for **each camera fitted separately to its own detected corners**. PnP reprojection here is *in-image fit*, not independent accuracy of the intrinsics.
+- How far the **source's frozen inter-camera R/T** projects the checkerboard seen in camera A away from the corresponding observations in camera B (cross-camera pixel error). This can respond to calibration drift, board motion between exposures, detector error and image synchronization.
+- Relative rotation angle difference (degrees) and translation difference (source board-square units) between the two independently PnP-fitted board poses and the original stereo transform. These are **not independent physical tracking or Vicon-world truth**.
+
+No cross-camera timing/clock offset, printed checkerboard square size in **millimetres**, rolling-shutter model, absolute 3D joint error or clinical accuracy is inferred. The upstream SUMediPose pipeline uses `world_scaling = 1` per board square; until the physical board square width is independently measured, translation remains in arbitrary board-square units.
+
+Only aggregate summary statistics are returned. Never publish JPGs, camera-specific point traces, private study outputs or source ZIPs. A high cross-camera error alongside a low per-camera PnP fit **prioritizes relative stereo calibration or capture-conditions investigation**, but cannot by itself determine which is responsible.

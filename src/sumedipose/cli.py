@@ -49,6 +49,10 @@ def main(argv=None):
                         help="Max checkerboard image-number shift per stereo pair (not milliseconds)")
     parser.add_argument("--stereo-lag-json",
                         help="Local-only aggregate lag and triangulated board-geometry JSON")
+    parser.add_argument("--calibration-uncertainty", action="store_true",
+                        help="Compare lens correction, local checkerboard pose and fixed stereo R/T")
+    parser.add_argument("--calibration-uncertainty-json",
+                        help="Local-only aggregate lens and stereo calibration uncertainty JSON")
     args = parser.parse_args(argv)
     if not args.audit and (args.mapping_csv or args.audit_json):
         parser.error("--mapping-csv and --audit-json require --audit")
@@ -73,8 +77,14 @@ def main(argv=None):
         parser.error("--stereo-json requires --stereo-holdout")
     if args.stereo_lag_json and not args.stereo_lag:
         parser.error("--stereo-lag-json requires --stereo-lag")
-    if args.external_frames_zip and not (args.stereo_holdout or args.stereo_lag):
-        parser.error("--external-frames-zip requires --stereo-holdout or --stereo-lag")
+    if args.calibration_uncertainty and not args.external_frames_zip:
+        parser.error("--calibration-uncertainty requires --external-frames-zip")
+    if args.calibration_uncertainty_json and not args.calibration_uncertainty:
+        parser.error("--calibration-uncertainty-json requires --calibration-uncertainty")
+    if args.external_frames_zip and not (
+        args.stereo_holdout or args.stereo_lag or args.calibration_uncertainty
+    ):
+        parser.error("--external-frames-zip requires a stereo calibration audit")
 
     if args.audit:
         from .sync import audit_sample, save_mapping
@@ -88,7 +98,7 @@ def main(argv=None):
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
             print(f"Audit saved locally: {path}")
-    elif not (args.stereo_holdout or args.stereo_lag):
+    elif not (args.stereo_holdout or args.stereo_lag or args.calibration_uncertainty):
         _, world, camera = read_sample(args.root, camera=args.camera, subject=args.subject, repeat=args.repeat)
         summary = record_summary(world, camera)
         if world:
@@ -121,6 +131,16 @@ def main(argv=None):
         print(json.dumps(report, ensure_ascii=False, indent=2))
         if args.stereo_lag_json:
             print(f"Stereo lag and board geometry saved locally: {save_json(args.stereo_lag_json, report)}")
+
+    if args.calibration_uncertainty:
+        from .calibration_uncertainty import stereo_pair_uncertainty
+        report = stereo_pair_uncertainty(
+            args.root, args.external_frames_zip,
+            subject=args.subject, paired_camera=args.paired_camera
+        )
+        print(json.dumps(report, ensure_ascii=False, indent=2))
+        if args.calibration_uncertainty_json:
+            print(f"Calibration uncertainty saved locally: {save_json(args.calibration_uncertainty_json, report)}")
 
     if args.motion_audit:
         from .temporal import optical_flow_audit
