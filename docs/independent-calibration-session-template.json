@@ -22,8 +22,9 @@
     "extrinsics_frozen_before_holdout": false,
     "C6_C5_fit_frames_count": null,
     "C6_C5_heldout_frames_count": null,
-    "heldout_board_quality_metric": "NOT_COMPUTED",
-    "frozen_calibration_asset_sha256_local_only": true
+    "heldout_board_quality_metric": "NOT_COMPUTED (after collection, replace with local object: {\"name\":\"C6_C5_Sampson_median_px\", \"value_px\":0.0})",
+    "frozen_calibration_asset_sha256_local_only": true,
+    "fit_holdout_disjoint_verified": false
   },
   "sync": {
     "camera_exposure_timestamps_observed": false,
@@ -56,5 +57,16 @@
     "session_is_independent_new_calibration": "UNVERIFIED",
     "analysis_status": "NOT_STARTED",
     "count_as_new_independent_unit": false
+  },
+  "equipment": {
+    "front_C1_reserved": false,
+    "rear_C6_reserved": false,
+    "stereo_C5_reserved": false,
+    "Vicon_reserved": false,
+    "metric_checkerboard_confirmed": false
+  },
+  "reference": {
+    "camera_Vicon_registration_verified": false,
+    "anatomical_joint_definition_reviewed": false
   }
 }
