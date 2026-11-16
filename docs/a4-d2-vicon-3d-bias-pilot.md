@@ -1,6 +1,6 @@
 # A4/D2 3D Vicon knee-angle comparison — signed bias and record-index sensitivity
 
-Status: **code-only extension pending local execution**. This document specifies the A4 follow-up to the already executed A3/D2 five-anchor [frame/joint pilot](a3-d2-frame-joint-pilot.md). It does **not** claim physical exposure-time synchronization or clinical accuracy.
+Status: **A4 local exploratory pilot executed on 2026-11-17**; original prospective method and constraints are retained below. This document specifies the A4 follow-up to the already executed A3/D2 five-anchor [frame/joint pilot](a3-d2-frame-joint-pilot.md). It does **not** claim physical exposure-time synchronization or clinical accuracy.
 
 ## Scientific question
 
@@ -45,3 +45,27 @@ The `--action` default remains `A3` for backward compatibility; A4 is opt-in. WC
 - [ ] Publish only non-identifying, approved aggregate evidence plus private local source pointers through established candidate-review pathways.
 
 The A3 historical result for the five anchor groups had a C6 WCS-3D model-vs-Vicon knee MAE median about **25.61° Lite / 26.69° Full**, absolute signed bias median about **20.26° / 23.49°**, and shift zero best or tied in only **one of five** A3 anchor recordings for each C6 model. This is a warning to scrutinize model anatomical geometry and record-index correspondence; it does **not** estimate a physical video/Vicon delay.
+
+## 2026-11-17 — local execution receipt (descriptive, five existing groups only)
+
+On the authorized Windows research PC, A4/D2 completed **20/20** recording×view×model runs, **480/480** attempted model-image inferences on 240 distinct source RGB images, and **453/480** pose detections. Source model assets were checked against the frozen model SHA256; original ZIPs were read in place, with no overwrite. The aggregate output and private detailed records were written **outside public Git**. A separate readback independently reproduced the aggregate **8/8** camera/model/reference-space cells from local reports and confirmed independence remains **five historical calibration groups, zero new groups**.
+
+Five-anchor **3D Vicon WCS included-knee-angle** per-recording group-median MAE and group-median signed bias (MediaPipe minus Vicon), in degrees:
+
+| View | Model | A3 MAE | A4 MAE | A3 signed bias | A4 signed bias | A4 positive/negative-bias groups |
+|---|---|---:|---:|---:|---:|---|
+| C1 front | Lite | 13.86 | 13.84 | +3.95 | −9.36 | 0 / 5 |
+| C1 front | Full | 13.87 | 14.80 | +3.02 | −12.52 | 1 / 4 |
+| C6 rear | Lite | 25.61 | 15.41 | +20.26 | +8.86 | 5 / 0 |
+| C6 rear | Full | 26.69 | 15.08 | +23.49 | +4.45 | 5 / 0 |
+
+For A4, shift index **zero was best or tied** in only **1/5 C6 Lite**, **3/5 C6 Full**, **1/5 C1 Lite**, **2/5 C1 Full** sessions. These are same-input, **in-sample** shifted-coordinate diagnostics. Their preferred index shifts do not establish a physical delay and must not be used as a synchronized correction. The view- and action-dependent signed-angle biases are noteworthy **exploratory effects**, but anatomy, source interpolation, occlusion, motion-range distribution and uncertain time correspondence remain alternative explanations. In particular, smaller A4 MAE is **not** proof that deadlifts are easier to measure clinically.
+
+Local-only aggregate output: `A4_D2_frame_joint_pilot_5anchors_aggregate_20261117.json`; private per-anchor report: `A4_D2_frame_joint_pilot_5anchors_local_20261117.json`; independent local validation: `A4_D2_frame_joint_pilot_independent_readback_20261117.json`, under the existing authorized Windows analysis directory. No raw image, model weight, person-level value or patient information was committed or uploaded.
+
+### Research outcome boundaries
+
+- The experiment compares **included knee angles only**, not XYZ positional accuracy or clinical flexion-extension ROM.
+- The camera `xyz` ground-truth representation comes from the same Vicon source as WCS, rather than an independently measured 3D ground truth.
+- Five same historical calibration groups were reused for A3 and A4; exploratory angle bias patterns should be tested on new, actually independent setups and with anatomical landmark harmonization and capture-time ground truth.
+- No p-values, statistical generalization, causal explanation, clinical cutoff, independent hardware time sync, or software-as-medical-device claim.
