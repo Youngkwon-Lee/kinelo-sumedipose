@@ -251,3 +251,20 @@ python -m sumedipose.calibration_strata --analysis-dir "$root\analysis" --output
 **Interpretation and safeguards:** calculate equal-*session*-weight descriptive Spearman correlations, never pool individual frames as independent observations. C1 is a view control alongside C6; the script also reports descriptive C6-minus-C1 MAE contrasts. Compare Lite vs Full **within the same 2D or 3D reference space**, not 2D projected-Vicon errors directly against 3D WCS errors. The high/low split at **5 px** of G65 epipolar error was chosen **post-hoc**, not as a clinical threshold. No inferential p-values, clinical accept/reject decision, exposure-time synchronization or training-set overlap audit are supplied.
 
 The tool refuses to claim a complete five-session comparison when any required model/view report or valid knee-angle session measurement is absent. It rejects sample/model-SHA/24-image protocol inconsistencies. Reports contain aggregate scalar associations only, not RGB photos, per-frame poses or participant-level measurements. Output must remain outside this public Git checkout; existing output files are never overwritten.
+
+## New-participant A3 squat repeat validation (same five calibration groups)
+
+The original five-session calibration–pose exploratory result used **one anchor participant per calibration group**. We subsequently selected **two different participants within each of the same five groups**, and evaluated three A3 squat repeats (D1/D2/D3) per participant, both C1 frontal and C6 posterior views, using the **unchanged** MediaPipe Lite/Full model assets and 24 uniquely sampled RGB frames per recording. This makes 10 additional participants, 30 recordings, 120 aggregate model runs and 2,880 image inferences — but **zero additional independent calibration sessions**.
+
+The analysis intentionally avoids pseudo-replication: weight the valid left/right knee-angle observations *within one recording*, then average across three repeats *within one participant*, then average across the two new participants sharing a calibration group. Associate only the resulting **five group means** with the five G65 (C6–C5) calibration Sampson residuals using *descriptive* Spearman rho. C1 serves as a view control; 2D projected-Vicon and 3D WCS knee-angle outcomes remain separate. The model predictions are **monocular**, whereas G65 is a **two-camera stereo** residual. A correlation is not a causal effect, independent 3D accuracy, or a medical quality threshold.
+
+Only the local Windows analysis folder contains the preselected subject mapping, model outputs, and original ZIPs. Once those 120 reports exist and all SHA/sampling/identity checks pass, reproduce their aggregate analysis with:
+
+~~~powershell
+$folder = "D:\Research\PublicDatasets\SUMediPose\analysis"
+python -m sumedipose.new_subject_validation --analysis-dir $folder --output "$folder\A3_grouped_repeat_validation_new_run.json"
+~~~
+
+Source code and synthetic tests may be published, but **never the per-subject report JSONs, original image archives, model weights, or detected coordinates**. The command fails closed on any missing/mismatched report or model SHA, and refuses to overwrite an existing report or write it under the public repository.
+
+Exploratory results from the new participants (five original calibration groups, not ten independent sessions): C6 3D WCS knee-angle MAE vs G65 residual had **rho 0.60 (Lite)** and **0.50 (Full)**, compared with **0.90/0.70** in the anchor participants. This is positive but weaker evidence; C1 and 2D comparisons are not consistently specific to C6. The five-group sample, within-session participant sharing, model/Vicon landmark differences, lack of raw hardware exposure timestamps, and possible model-training data overlap prevent inference of clinical 3D accuracy. All three repeats are **squats**, not independent exercise types.
