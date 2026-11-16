@@ -1,0 +1,60 @@
+{
+  "template_note": "SYNTHETIC TEMPLATE ONLY. Filled session records and source/calibration data must remain private and must NOT be committed.",
+  "protocol": "independent-calibration-study-v1",
+  "research_status": "not_collected",
+  "session_code": "CAL-NEW-XXX-PLACEHOLDER",
+  "acquisition_date": "YYYY-MM-DD",
+  "camera_setup": {
+    "site_code": "CODE_ONLY",
+    "rig_config_version": "VERSION_PLACEHOLDER",
+    "new_calibration_acquisition": false,
+    "new_setup_or_remount_evidence": "UNVERIFIED",
+    "cameras": [
+      "C1",
+      "C5",
+      "C6"
+    ],
+    "metric_compatible_with_SUMediPose_G65": "UNVERIFIED"
+  },
+  "calibration": {
+    "square_size_mm": null,
+    "intrinsics_frozen_before_holdout": false,
+    "extrinsics_frozen_before_holdout": false,
+    "C6_C5_fit_frames_count": null,
+    "C6_C5_heldout_frames_count": null,
+    "heldout_board_quality_metric": "NOT_COMPUTED",
+    "frozen_calibration_asset_sha256_local_only": true
+  },
+  "sync": {
+    "camera_exposure_timestamps_observed": false,
+    "Vicon_reference_clock_verified": false,
+    "common_trigger_or_independent_event_verified": false,
+    "physical_timestamp_alignment_status": "UNVERIFIED"
+  },
+  "movement_plan": {
+    "actions": [
+      "A3",
+      "A4"
+    ],
+    "views_for_pose": [
+      "C1",
+      "C6"
+    ],
+    "models": [
+      "lite",
+      "full"
+    ],
+    "unique_rgb_frames_per_recording": 24,
+    "participant_records_private": true
+  },
+  "permissions": {
+    "research_permission_verified": false,
+    "participant_consent_verified": false,
+    "usage_or_license_verified": false
+  },
+  "outcome": {
+    "session_is_independent_new_calibration": "UNVERIFIED",
+    "analysis_status": "NOT_STARTED",
+    "count_as_new_independent_unit": false
+  }
+}

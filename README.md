@@ -282,3 +282,7 @@ Once all five matching calibration anchors (S1, S6, S11, S17 and S23) have A4 re
     python -m sumedipose.action_generalization --analysis-dir PRIVATE_ANALYSIS_DIR --output PRIVATE_SUMMARY_JSON
 
 The A3 and A4 comparison is five paired calibration groups, not ten independent calibration trials. G65 C6-C5 stereo residuals are not direct evidence of monocular accuracy. Physical capture synchronization, Vicon-vs-model landmark equivalence and clinical knee-angle validity remain unverified. Original RGB ZIP, Vicon coordinates, local model assets and all participant-level reports are excluded from Git.
+
+## Next validation: genuinely independent camera calibration sessions
+
+The existing SUMediPose A3 and A4 results share five daily camera calibration sessions. Increasing participants, exercises, views or image-inference counts does not create new independent calibration evidence. For the prospective capture design, held-out C6-C5 stereo-quality measure, capture-synchronization gates, privacy and external dataset limitations, see [Independent calibration-session validation protocol v1](docs/independent-calibration-study-v1.md). No new calibration acquisition is claimed.
