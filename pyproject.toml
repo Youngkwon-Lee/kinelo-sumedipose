@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "kinelo-sumedipose"
+version = "0.1.0"
+description = "Reproducible local-first tools for studying SUMediPose squat 2D/3D data"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "MIT"}
+authors = [{name = "Youngkwon-Lee"}]
+dependencies = ["numpy>=1.24"]
+
+[project.optional-dependencies]
+viz = ["matplotlib>=3.7", "Pillow>=10"]
+test = ["pytest>=8"]
+
+[project.scripts]
+sumedipose = "sumedipose.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
