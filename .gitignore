@@ -41,3 +41,5 @@ dist/
 # Third-party model weights must remain local
 *.task
 models/
+# Separately obtained original calibration photographs
+source_calibration/
