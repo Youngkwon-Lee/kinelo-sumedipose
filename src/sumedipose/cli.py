@@ -37,6 +37,12 @@ def main(argv=None):
     parser.add_argument("--benchmark-json", help="Local aggregate benchmark JSON output (requires --pose-baseline)")
     parser.add_argument("--calibration-inventory", action="store_true", help="Inspect source-provided calibration matrix structure")
     parser.add_argument("--calibration-json", help="Local calibration inventory JSON (requires --calibration-inventory)")
+    parser.add_argument("--stereo-holdout", action="store_true",
+                        help="Audit source stereo calibration with withheld external checkerboard frames")
+    parser.add_argument("--external-frames-zip", help="Verified external calibration session ZIP (not A3 RGB ZIP)")
+    parser.add_argument("--paired-camera", choices=("C2","C3","C4","C5"),
+                        default="C2", help="Paired camera whose R/T is evaluated")
+    parser.add_argument("--stereo-json", help="Save aggregate holdout epipolar JSON locally")
     args = parser.parse_args(argv)
     if not args.audit and (args.mapping_csv or args.audit_json):
         parser.error("--mapping-csv and --audit-json require --audit")
@@ -53,6 +59,10 @@ def main(argv=None):
         parser.error("--pose-baseline requires --model-task")
     if args.benchmark_json and not args.pose_baseline:
         parser.error("--benchmark-json requires --pose-baseline")
+    if args.stereo_holdout and not args.external_frames_zip:
+        parser.error("--stereo-holdout requires --external-frames-zip")
+    if (args.stereo_json or args.external_frames_zip) and not args.stereo_holdout:
+        parser.error("--stereo-json and --external-frames-zip require --stereo-holdout")
 
     if args.audit:
         from .sync import audit_sample, save_mapping
@@ -66,7 +76,7 @@ def main(argv=None):
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
             print(f"Audit saved locally: {path}")
-    else:
+    elif not args.stereo_holdout:
         _, world, camera = read_sample(args.root, camera=args.camera, subject=args.subject, repeat=args.repeat)
         summary = record_summary(world, camera)
         if world:
@@ -78,6 +88,16 @@ def main(argv=None):
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(json.dumps(record, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
         return path
+
+    if args.stereo_holdout:
+        from .heldout_calibration import audit_stereo_pair
+        report = audit_stereo_pair(
+            args.root, args.external_frames_zip,
+            subject=args.subject, paired_camera=args.paired_camera[1:],
+        )
+        print(json.dumps(report, ensure_ascii=False, indent=2))
+        if args.stereo_json:
+            print(f"Stereo holdout summary saved locally: {save_json(args.stereo_json, report)}")
 
     if args.motion_audit:
         from .temporal import optical_flow_audit

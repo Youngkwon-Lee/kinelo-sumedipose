@@ -164,3 +164,19 @@ Each run selects up to 24 **evenly spaced unique available RGB JPEG files**. The
 - **No clinical validation:** no held-out model-training provenance audit, calibration into Vicon coordinates, independent capture timestamp proof, population-level statistical inference, or clinical knee ROM definitions were established. This is an offline feasibility pilot, not a medical device assessment.
 
 Record the exact model URL, SHA256, MediaPipe runtime version, source data selection and per-participant grouping in a **local-only** protocol. Do not publish identifiable RGB videos, per-participant predictions, private manifests or evaluation images.
+
+## Independent-of-fit stereo checkerboard geometry (not Vicon time synchronization)
+
+The SUMediPose [Harvard Dataverse dataset](https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/GRRROM) provides separate **external calibration frame archives** (e.g. `calibration/external/frames/S1.zip` and `S6.zip`) that are **not** part of the existing squat A3 ZIP set. Acquire archives separately under the source CC BY-NC-SA 4.0 terms. Never commit the originals, extracted JPGs, or per-participant evaluation records.
+
+One calibration ZIP holds eight groups of 60 JPEGs (480 total), for the four original stereo pairs C1/C2, C1/C3, C6/C4 and C6/C5. `raw/calibration/external_calibration.csv` lists the 5–6 frames used to fit each pair's original R/T; the remaining source frames are withheld for evaluation. The original calibration JPGs need a **90° counterclockwise orientation transform** before comparing detected board points with the source's portrait camera intrinsics.
+
+```powershell
+sumedipose --root "D:\Research\PublicDatasets\SUMediPose\raw" --subject S1 --stereo-holdout --paired-camera C5 --external-frames-zip "D:\Research\PublicDatasets\SUMediPose\source_calibration\external_frames\S1.zip" --stereo-json "D:\Research\PublicDatasets\SUMediPose\analysis\S1_stereo_C5_holdout.json"
+```
+
+The audit detects the 8×6 internal chessboard intersections from images *in memory*. Symmetry/orientation choice for point ordering is fixed **using source fitting frames only**. It then computes the median of the symmetric **Sampson epipolar distance** (pixels in the undistorted camera plane) over each separately held-out image pair, using the saved source R/T and intrinsics **without refitting them**. The output includes holdout sample detection coverage, median and p90 frame-level residual, and an explicit missing/undetected count.
+
+Epipolar geometry consistency is **not 3D point reprojection accuracy**: estimated board plane pose, stereo triangulation, and independent Vicon joint-centre error are not established. Same-numbered calibration images may not have independently proven exposure simultaneity. The audit is sensitive to chessboard detection failures, board symmetries and source frame selection; report coverage, fit residual and holdout residual together. Do not infer camera/Vicon hardware clock synchronization or clinical validity from a low epipolar residual.
+
+Install with `python -m pip install -e ".[image]"` to provide OpenCV. No dataset download is triggered by the CLI.
