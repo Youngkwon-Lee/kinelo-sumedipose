@@ -180,3 +180,19 @@ The audit detects the 8×6 internal chessboard intersections from images *in mem
 Epipolar geometry consistency is **not 3D point reprojection accuracy**: estimated board plane pose, stereo triangulation, and independent Vicon joint-centre error are not established. Same-numbered calibration images may not have independently proven exposure simultaneity. The audit is sensitive to chessboard detection failures, board symmetries and source frame selection; report coverage, fit residual and holdout residual together. Do not infer camera/Vicon hardware clock synchronization or clinical validity from a low epipolar residual.
 
 Install with `python -m pip install -e ".[image]"` to provide OpenCV. No dataset download is triggered by the CLI.
+
+## File-index lag sensitivity and triangulated checkerboard consistency
+
+The official [SUMediPose calibration pipeline](https://github.com/chris-schreuder/SUMediPose_pipeline/blob/main/code/calibration/extrinsic.py) defines an **8×6 interior-corner board** with `world_scaling = 1`: one neighboring chessboard square is **one arbitrary calibration unit**, **not an independently verified length in millimetres**. Its saved stereo `R`, `T`, camera matrices and distortion are used without refitting.
+
+### Run on a previously verified, separate official external-calibration ZIP
+
+```powershell
+sumedipose --root "D:\Research\PublicDatasets\SUMediPose\raw" --subject S6 --stereo-lag --paired-camera C5 --max-calib-lag 5 --external-frames-zip "D:\Research\PublicDatasets\SUMediPose\source_calibration\external_frames\S6.zip" --stereo-lag-json "D:\Research\PublicDatasets\SUMediPose\analysis\S6_G65_lag_board3d_cli.json"
+```
+
+- The **-5 to +5 offsets** are *file/image-number* shifts in one source calibration group, **not milliseconds or proof of camera-exposure clock alignment**. Source fit frames are excluded from **both** cameras at all tested offsets.
+- Source fitting frames alone choose checkerboard orientation; all holdout frames retain that choice. The scan reports Sampson epipolar error median and 90th percentile at each shift, detection coverage, and a fairer **matched-frame-anchor** comparison against zero shift because available images change as the offset changes.
+- For zero index shift, detect an 8×6 checkerboard and independently triangulate its corners from original stereo intrinsics/extrinsics (no refitting). Reprojection back into the **same two images** gives a **stereo self-consistency** residual in pixels. The reconstructed checkerboard's neighboring edge lengths and planarity are measured in arbitrary **source chessboard-square units**.
+- A low two-view reprojection residual is **not independently measured 3D physical truth**, and an edge-length residual in board-square units must never be called a millimetre or clinical angle error. No common Vicon/camera clock or measured physical board square size is verified. Differences may reflect board detection, lens distortion, calibration stability and capture mismatch.
+- The source and any derived subject-level geometry files stay outside this public Git history. The code returns *aggregate scalars only*, without images, detected corners or reconstructed per-frame point clouds. No model training, new image download or clinical analysis is triggered.
