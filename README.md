@@ -119,3 +119,29 @@ sumedipose --root "D:\Research\PublicDatasets\SUMediPose\raw" --subject S1 --cal
 - Physical exposure timestamp sync, 2D/3D model benchmark accuracy and clinical validity remain **unverified** regardless of the exploratory score.
 
 Install the optional OpenCV support using `pip install -e ".[image]"`; no dataset download occurs.
+
+## View-dependent ROI diagnostics and timestamp evidence
+
+The optical-flow test is sensitive to which pixels are allowed to contribute tracking points. A rear view can have different feature texture and occlusions than the front view. **Do not choose the best-performing ROI after inspecting a test set and call it independently validated timing**. Preserve the original setting, compare controlled alternative ROI sizes at a fixed image width, and inspect a separate recording before treating the change as a stable observation.
+
+```powershell
+sumedipose --root "D:\Research\PublicDatasets\SUMediPose\raw" --camera C6 --subject S1 --repeat D1 --motion-audit --image-width 288 --roi-markers C7 CLAV --roi-half-width 16 --roi-half-height 18 --motion-json "D:\Research\PublicDatasets\SUMediPose\analysis\C6S1A3D1_tight_roi.json"
+```
+
+To separate the **effective ROI size** from the resized image resolution, scale the ROI dimensions proportionally when doubling width (for example 288px width with 32×36px half-ROI vs 576px width with 64×72px half-ROI). Lag output units remain sampled image pairs, **not** camera frames or milliseconds. Compare front and rear cameras, as well as repeated recordings, before making a causal claim.
+
+Compare the dataset's **manually annotated calibration-wand LED positions** to its own provided `wand_xy` projections:
+
+```powershell
+sumedipose --root "D:\Research\PublicDatasets\SUMediPose\raw" --subject S1 --repeat D1 --wand-fit --wand-json "D:\Research\PublicDatasets\SUMediPose\analysis\S1_wand_annotation_fit_residuals.json"
+```
+
+The five-point wand residuals may use points originally involved in **fitting** camera projection parameters. Their RMS pixel error is an **in-sample reference-fit diagnostic**, **not** an independently held-out calibration/reprojection accuracy result. The physical wand reference (A0) images may not be present in the A3-only download; absent source images must not be fabricated.
+
+Check whether camera and WCS records, the main CSV header, and up to three available JPEG EXIF records expose real capture times:
+
+```powershell
+sumedipose --root "D:\Research\PublicDatasets\SUMediPose\raw" --camera C6 --subject S1 --repeat D1 --timestamp-evidence --timestamp-json "D:\Research\PublicDatasets\SUMediPose\analysis\C6S1A3D1_timestamp_evidence.json"
+```
+
+This bounded evidence inventory is **not an exhaustive search for all possible source log files**. Camera `frame_num`, `frame_num_w_drop`, ZIP modification dates, and post-hoc stomp alignment do **not** establish a common hardware clock. All results retain independent synchronization as unverified until original frame-timestamp logs or hardware sync-event evidence is available. Only aggregate JSON leaves the original ZIP reader; keep all per-record outputs local.
