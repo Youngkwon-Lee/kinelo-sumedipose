@@ -92,3 +92,58 @@ def test_calibration_matrix_read_only_inventory(tmp_path):
     assert result["external_camera_calibration_accuracy_validated"] is False
     assert result["camera_pairs"][0]["source_error_value"] == 12.5
     assert file.exists()
+
+
+def test_roi_marker_and_size_are_explicit(tmp_path):
+    root = _synthetic_case(tmp_path)
+    result = optical_flow_audit(
+        root, stride=2, marker_ids=("C7",), roi_half_width=16,
+        roi_half_height=18, displacement_axis="y",
+    )
+    assert result["tracking_marker_ids"] == ["C7"]
+    assert result["roi_half_width_analysis_pixels"] == 16
+    assert result["roi_half_height_analysis_pixels"] == 18
+    assert result["displacement_axis"] == "y"
+    assert result["physical_exposure_timestamp_sync_verified"] is False
+    with pytest.raises(ValueError):
+        optical_flow_audit(root, roi_half_width=2)
+    with pytest.raises(ValueError):
+        optical_flow_audit(root, marker_ids=("C7", "C7"))
+    with pytest.raises(ValueError):
+        optical_flow_audit(root, displacement_axis="z")
+
+
+def test_wand_annotation_residual_is_not_holdout_accuracy(tmp_path):
+    from sumedipose.calibration import calibration_wand_fit_residuals
+    root = _synthetic_case(tmp_path)
+    archive = root / "internal_data/C1/S1.zip"
+    with ZipFile(archive) as z:
+        records = json.loads(z.read("S1A3D1.json"))
+    projections = [[i + 100.0, i + 200.0] for i in range(5)]
+    for row in records:
+        row["wand_xy"] = projections
+    with ZipFile(archive, "w") as z:
+        z.writestr("S1A3D1.json", json.dumps(records))
+    annotations = {"S1": {"C1": {
+        "points": [[x - 1.0, y] for x, y in projections],
+        "path": "frames/C1/S1/C1S1A0D1/C1S1A0D1_0010.jpg",
+    }}}
+    (root / "markers_points.json").write_text(json.dumps(annotations), encoding="utf-8")
+    report = calibration_wand_fit_residuals(root, cameras=("C1",))
+    row = report["wand_fit_residuals"][0]
+    assert row["wand_point_count"] == 5
+    assert row["source_annotation_fit_rmse_pixels"] == 1.0
+    assert row["wand_projection_constant_within_recording"] is True
+    assert row["out_of_sample_accuracy_proven"] is False
+    assert report["camera_to_vicon_exposure_timestamps_verified"] is False
+
+
+def test_capture_time_evidence_does_not_confuse_indices_with_clock(tmp_path):
+    from sumedipose.sync_evidence import timestamp_evidence_inventory
+    root = _synthetic_case(tmp_path)
+    report = timestamp_evidence_inventory(root, camera="C1")
+    assert report["wcs_timestamp_fields"] == []
+    assert report["camera_timestamp_fields"] == []
+    assert report["jpeg_exif_images_with_datetime"] == 0
+    assert report["frame_num_or_frame_num_w_drop_used_as_capture_times"] is False
+    assert report["independent_exposure_time_sync_verified"] is False

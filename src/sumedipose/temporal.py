@@ -26,10 +26,19 @@ def lag_correlations(expected, observed, max_lag=4):
 
 
 def optical_flow_audit(root, camera="C1", subject="S1", repeat="D1",
-                       *, stride=6, image_width=288, max_lag=4):
+                       *, stride=6, image_width=288, max_lag=4,
+                       marker_ids=("C7", "CLAV"), displacement_axis="y",
+                       roi_half_width=32, roi_half_height=36):
     """Use actual JPG pixels to assess motion plausibility, not physical clock sync."""
     if not 1 <= stride <= 200 or not 128 <= image_width <= 1024 or not 0 <= max_lag <= 50:
         raise ValueError("Invalid analysis parameters")
+    if not marker_ids or len(set(marker_ids)) != len(marker_ids) or not all(isinstance(x, str) and x for x in marker_ids):
+        raise ValueError("Provide unique named tracking markers")
+    if displacement_axis not in ("x", "y"):
+        raise ValueError("displacement_axis must be x or y")
+    if not 4 <= roi_half_width <= 512 or not 4 <= roi_half_height <= 512:
+        raise ValueError("ROI dimensions out of range")
+    axis = 0 if displacement_axis == "x" else 1
     try:
         import cv2
     except ImportError as exc:
@@ -60,7 +69,7 @@ def optical_flow_audit(root, camera="C1", subject="S1", repeat="D1",
         def point(rec, scale):
             ids = rec["point_ids"]
             coord = np.asarray(rec["xy"], float)
-            p = coord[[ids.index("C7"), ids.index("CLAV")]].mean(axis=0)*scale
+            p = coord[[ids.index(m) for m in marker_ids]].mean(axis=0)*scale
             if not np.isfinite(p).all():
                 raise ValueError("Non-finite projection")
             return p
@@ -79,8 +88,8 @@ def optical_flow_audit(root, camera="C1", subject="S1", repeat="D1",
                 continue
             mask = np.zeros_like(a)
             x, y = np.rint(p).astype(int)
-            x0, x1 = max(0, x-32), min(a.shape[1], x+32)
-            y0, y1 = max(0, y-36), min(a.shape[0], y+36)
+            x0, x1 = max(0, x-roi_half_width), min(a.shape[1], x+roi_half_width)
+            y0, y1 = max(0, y-roi_half_height), min(a.shape[0], y+roi_half_height)
             if x1 <= x0 or y1 <= y0:
                 continue
             mask[y0:y1, x0:x1] = 255
@@ -101,8 +110,8 @@ def optical_flow_audit(root, camera="C1", subject="S1", repeat="D1",
                     & (err.ravel()<25) & (fb<2))
             if good.sum() < 5:
                 continue
-            expected.append(float(q[1]-p[1]))
-            observed.append(float(np.median((nxt-pts).reshape(-1,2)[good,1])))
+            expected.append(float(q[axis]-p[axis]))
+            observed.append(float(np.median((nxt-pts).reshape(-1,2)[good,axis])))
             features.append(int(good.sum()))
 
     lag = lag_correlations(expected, observed, max_lag)
@@ -113,10 +122,19 @@ def optical_flow_audit(root, camera="C1", subject="S1", repeat="D1",
     same = lag["0"]
     plausible = bool(len(observed)>=15 and same is not None and same>=.8
                      and best==0 and median_err is not None and median_err<3)
+    first_n = len(expected) // 2
+    half_corr = {
+        "first_half": lag_correlations(expected[:first_n], observed[:first_n], 0)["0"],
+        "second_half": lag_correlations(expected[first_n:], observed[first_n:], 0)["0"],
+    }
     return {
         "sample": f"{camera}{subject}A3{repeat}",
         "method": "forward-backward LK optical flow of RGB upper torso",
         "roi_uses_camera_marker_projection": True,
+        "tracking_marker_ids": list(marker_ids),
+        "displacement_axis": displacement_axis,
+        "roi_half_width_analysis_pixels": roi_half_width,
+        "roi_half_height_analysis_pixels": roi_half_height,
         "stride_unique_rgb_images": stride,
         "analysis_image_width_pixels": image_width,
         "lag_unit": "sampled_pairs_not_frames_or_seconds",
@@ -131,6 +149,7 @@ def optical_flow_audit(root, camera="C1", subject="S1", repeat="D1",
         "motion_correlation_lag_zero": same,
         "best_lag_in_sampled_pair_units": best,
         "lag_correlations": lag,
+        "lag_zero_correlation_by_half": half_corr,
         "exploratory_rgb_motion_consistency_supported": plausible,
         "physical_exposure_timestamp_sync_verified": False,
         "clinical_measurement_validated": False,
