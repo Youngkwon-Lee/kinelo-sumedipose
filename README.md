@@ -71,3 +71,27 @@ See [DATA_POLICY.md](DATA_POLICY.md). Research originals must remain on local st
 ## License
 
 Our **original code and documentation only**: MIT; see [LICENSE](LICENSE). This does **not** grant rights over SUMediPose data or third-party software.
+
+## A3 RGB / camera / WCS alignment audit
+
+The local audit reads original archives **in place** without extracting or rewriting them. Run tests with `python -m pytest` after installation. For one camera/subject/repeat:
+
+```powershell
+sumedipose --root "D:\Research\PublicDatasets\SUMediPose\raw" --camera C1 --subject S1 --repeat D1 --audit
+```
+
+To save derived, **local-only** reports (do not upload these subject-level outputs to Git):
+
+```powershell
+sumedipose --root "D:\Research\PublicDatasets\SUMediPose\raw" --camera C1 --subject S1 --repeat D1 --audit --audit-json "D:\Research\PublicDatasets\SUMediPose\analysis\C1S1A3D1_alignment_audit.json" --mapping-csv "D:\Research\PublicDatasets\SUMediPose\analysis\C1S1A3D1_alignment_map.csv"
+```
+
+The CSV maps each WCS **list index** to a camera metadata record, `frame_num_w_drop`, camera `frame_num`, and referenced RGB ZIP member. An image member can be **reused** for multiple coordinate records; do not count those as independent photographs or assume one RGB image for every WCS record. Missing referenced RGB members are explicitly marked, **not interpolated or downloaded**.
+
+The audit exposes three distinct results:
+
+- `record_index_alignment_supported`: WCS and camera 3D records have matching marker IDs and near-identical included knee angles at the **same list index** (a heuristic check; their 3D coordinates may derive from the same source).
+- `rgb_mapping_complete`: all camera metadata image references exist in the RGB ZIP with valid expected names.
+- `complete_rgb_alignment_audit_pass`: both checks and sequence diagnostics pass; this is **structural** validation, not independently validated video/Vicon timestamp synchronization.
+
+`physical_timestamp_synchronization_verified` remains **false** until exposure timestamps, calibration and hardware clock or independently measurable temporal events have been checked. The first/last RGB frame numbers can differ substantially from WCS frame numbers; never join by equality of their numeric `frame_num` fields. See `DATA_POLICY.md` before sharing any outputs.
