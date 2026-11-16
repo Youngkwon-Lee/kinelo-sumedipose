@@ -43,6 +43,12 @@ def main(argv=None):
     parser.add_argument("--paired-camera", choices=("C2","C3","C4","C5"),
                         default="C2", help="Paired camera whose R/T is evaluated")
     parser.add_argument("--stereo-json", help="Save aggregate holdout epipolar JSON locally")
+    parser.add_argument("--stereo-lag", action="store_true",
+                        help="Audit +/- file-index offsets and held-out stereo board geometry")
+    parser.add_argument("--max-calib-lag", type=int, default=5,
+                        help="Max checkerboard image-number shift per stereo pair (not milliseconds)")
+    parser.add_argument("--stereo-lag-json",
+                        help="Local-only aggregate lag and triangulated board-geometry JSON")
     args = parser.parse_args(argv)
     if not args.audit and (args.mapping_csv or args.audit_json):
         parser.error("--mapping-csv and --audit-json require --audit")
@@ -61,8 +67,14 @@ def main(argv=None):
         parser.error("--benchmark-json requires --pose-baseline")
     if args.stereo_holdout and not args.external_frames_zip:
         parser.error("--stereo-holdout requires --external-frames-zip")
-    if (args.stereo_json or args.external_frames_zip) and not args.stereo_holdout:
-        parser.error("--stereo-json and --external-frames-zip require --stereo-holdout")
+    if args.stereo_lag and not args.external_frames_zip:
+        parser.error("--stereo-lag requires --external-frames-zip")
+    if args.stereo_json and not args.stereo_holdout:
+        parser.error("--stereo-json requires --stereo-holdout")
+    if args.stereo_lag_json and not args.stereo_lag:
+        parser.error("--stereo-lag-json requires --stereo-lag")
+    if args.external_frames_zip and not (args.stereo_holdout or args.stereo_lag):
+        parser.error("--external-frames-zip requires --stereo-holdout or --stereo-lag")
 
     if args.audit:
         from .sync import audit_sample, save_mapping
@@ -76,7 +88,7 @@ def main(argv=None):
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
             print(f"Audit saved locally: {path}")
-    elif not args.stereo_holdout:
+    elif not (args.stereo_holdout or args.stereo_lag):
         _, world, camera = read_sample(args.root, camera=args.camera, subject=args.subject, repeat=args.repeat)
         summary = record_summary(world, camera)
         if world:
@@ -98,6 +110,17 @@ def main(argv=None):
         print(json.dumps(report, ensure_ascii=False, indent=2))
         if args.stereo_json:
             print(f"Stereo holdout summary saved locally: {save_json(args.stereo_json, report)}")
+
+    if args.stereo_lag:
+        from .stereo_lag import lag_summary
+        report = lag_summary(
+            args.root, args.external_frames_zip,
+            subject=args.subject, paired_camera=args.paired_camera,
+            max_lag=args.max_calib_lag,
+        )
+        print(json.dumps(report, ensure_ascii=False, indent=2))
+        if args.stereo_lag_json:
+            print(f"Stereo lag and board geometry saved locally: {save_json(args.stereo_lag_json, report)}")
 
     if args.motion_audit:
         from .temporal import optical_flow_audit
