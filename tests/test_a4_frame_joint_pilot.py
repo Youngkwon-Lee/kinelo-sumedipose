@@ -46,7 +46,7 @@ def test_A4_paired_aggregate_keeps_five_independent_calibrations():
     assert len(result["aggregate_cells"]) == 8
     assert all(row["median_absolute_signed_bias_degrees"] == 8 for row in result["aggregate_cells"])
     assert result["safety"]["clinical_accuracy_validated"] is False
-    assert result["safety"]["index_shift_is_time_sync_proof"] is not True if "index_shift_is_time_sync_proof" in result["safety"] else True
+    assert result["safety"]["in_sample_shift_selection_not_hardware_time_sync"] is True
 
 
 def test_existing_A3_default_unchanged():
