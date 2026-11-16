@@ -286,3 +286,7 @@ The A3 and A4 comparison is five paired calibration groups, not ten independent 
 ## Next validation: genuinely independent camera calibration sessions
 
 The existing SUMediPose A3 and A4 results share five daily camera calibration sessions. Increasing participants, exercises, views or image-inference counts does not create new independent calibration evidence. For the prospective capture design, held-out C6-C5 stereo-quality measure, capture-synchronization gates, privacy and external dataset limitations, see [Independent calibration-session validation protocol v1](docs/independent-calibration-study-v1.md). No new calibration acquisition is claimed.
+
+## A4/D2 3D Vicon angle-bias and record-index follow-up
+
+The existing [A3/D2 frame-index and signed angle-bias pilot](docs/a3-d2-frame-joint-pilot.md) can also be run for deadlift via `python -m sumedipose.frame_joint_pilot --action A4`. See the [A4/D2 3D Vicon comparison protocol](docs/a4-d2-vicon-3d-bias-pilot.md) for the source-only coordinate definitions, frozen 24-frame comparison, private-output boundary and critical limitation: **a record-index shift is not a verified exposure-time alignment, and the model landmarks are not independent Vicon joint centres**.

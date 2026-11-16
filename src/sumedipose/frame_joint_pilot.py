@@ -1,4 +1,4 @@
-"""A3/D2 local-only index-shift and joint-angle bias pilot.
+"""A3/A4 D2 local-only index-shift and joint-angle bias pilot.
 
 Tests WCS-record-index sensitivity, NOT camera/Vicon exposure synchronization.
 MediaPipe landmarks and Vicon joint centres are anatomically different.
@@ -97,12 +97,15 @@ def shift_sensitivity(
 
 
 def evaluate_recording(root: Path, subject: str, camera: str, model_path: Path,
-                       max_frames: int = 24, visibility: float = 0.5) -> dict:
+                       max_frames: int = 24, visibility: float = 0.5,
+                       action: str = "A3") -> dict:
     """Run exactly the previous 24-image sampling rule; retain no landmarks."""
+    if action not in ("A3", "A4"):
+        raise ValueError("Only the A3 squat and A4 deadlift are supported")
     import cv2
     import mediapipe as mp
 
-    paths, world, cam = read_sample(root, camera=camera, subject=subject, action="A3", repeat="D2")
+    paths, world, cam = read_sample(root, camera=camera, subject=subject, action=action, repeat="D2")
     if len(world) != len(cam):
         raise ValueError("WCS/camera coordinate record count mismatch")
     refs = {
@@ -147,7 +150,7 @@ def evaluate_recording(root: Path, subject: str, camera: str, model_path: Path,
                         if math.isfinite(angle):
                             predictions[modality].append((idx, side, angle))
     return {
-        "subject": subject, "camera": camera, "model": model_path.stem,
+        "subject": subject, "camera": camera, "action": action, "model": model_path.stem,
         "unique_rgb_images_sampled": len(picks),
         "poses_detected": detections,
         "wcs_coordinate_records": len(world),
@@ -165,8 +168,10 @@ def evaluate_recording(root: Path, subject: str, camera: str, model_path: Path,
     }
 
 
-def aggregate_pilot(rows: list[dict]) -> dict:
+def aggregate_pilot(rows: list[dict], action: str = "A3") -> dict:
     """Aggregate across five anchors without leaking participant identifiers."""
+    if action not in ("A3", "A4") or any(row.get("action", action) != action for row in rows):
+        raise ValueError("Mixed or unsupported action in frame-index pilot")
     table = []
     for camera in CAMERAS:
         for model in MODELS:
@@ -196,7 +201,7 @@ def aggregate_pilot(rows: list[dict]) -> dict:
                 })
     return {
         "status": "exploratory_index_shift_and_signed_bias_pilot",
-        "action": "A3 squat", "repeat": "D2",
+        "action": "A3 squat" if action == "A3" else "A4 deadlift", "repeat": "D2",
         "n_anchor_recordings": len(ANCHORS),
         "independent_calibration_groups": len(ANCHORS),
         "new_independent_calibration_groups": 0,
@@ -225,6 +230,8 @@ def main(argv=None) -> int:
     parser.add_argument("--analysis-dir", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--aggregate-output", type=Path, required=True)
+    parser.add_argument("--action", choices=("A3", "A4"), default="A3",
+                        help="A3 squat (default) or A4 deadlift; D2 only")
     args = parser.parse_args(argv)
     repository = Path(__file__).resolve().parents[2]
     outputs = [args.output.resolve(), args.aggregate_output.resolve()]
@@ -251,10 +258,11 @@ def main(argv=None) -> int:
         for camera in CAMERAS:
             for model in MODELS:
                 reports.append(evaluate_recording(
-                    args.root, subject, camera, model_paths[model]))
-    aggregate = aggregate_pilot(reports)
+                    args.root, subject, camera, model_paths[model], action=args.action))
+    aggregate = aggregate_pilot(reports, action=args.action)
     local = {
         "status": aggregate["status"],
+        "action": args.action,
         "subjects": list(ANCHORS),
         "model_asset_sha256": {m: protocol["models"][m]["sha256"] for m in MODELS},
         "reports": reports,
