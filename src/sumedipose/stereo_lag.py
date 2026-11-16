@@ -15,6 +15,7 @@ from .heldout_calibration import (
 )
 
 from .board3d import triangulated_board_metrics, aggregate_board_metrics
+from .board_scale import published_board_scale_evidence
 
 
 def candidate_lag_indices(fit_ids, detected_a, detected_b, lag):
@@ -134,7 +135,9 @@ def lag_summary(raw_root, external_zip, subject="S1",
         "lowest_median_error_offset_observed":best["offset_file_frame_numbers"] if best else None,
         "zero_index_holdout_board_geometry": board_summary,
         "source_checkerboard_world_scaling":1,
-        "physical_square_size_mm_known":False,
+        "physical_square_size_mm_known":True,
+        "published_nominal_board_scale":published_board_scale_evidence(),
+        "measured_actual_board_square_size_mm_verified":False,
         "zero_index_stereo_error_px": next(
             x["median_frame_sampson_epipolar_px"] for x in lags
             if x["offset_file_frame_numbers"] == 0),
