@@ -183,7 +183,7 @@ Install with `python -m pip install -e ".[image]"` to provide OpenCV. No dataset
 
 ## File-index lag sensitivity and triangulated checkerboard consistency
 
-The official [SUMediPose calibration pipeline](https://github.com/chris-schreuder/SUMediPose_pipeline/blob/main/code/calibration/extrinsic.py) defines an **8×6 interior-corner board** with `world_scaling = 1`: one neighboring chessboard square is **one arbitrary calibration unit**, **not an independently verified length in millimetres**. Its saved stereo `R`, `T`, camera matrices and distortion are used without refitting.
+**Source correction (2026-11-16):** The [SUMediPose peer-reviewed paper](https://pmc.ncbi.nlm.nih.gov/articles/PMC12088771/) (Camera System Calibration, section 5.3.2) explicitly reports an **A2 calibration board with 60 mm squares**. The [authors' calibration pipeline](https://github.com/chris-schreuder/SUMediPose_pipeline/blob/main/code/calibration/extrinsic.py) uses an 8x6 interior-corner board with world_scaling = 1 per square. Thus **one original calibration-square unit corresponds nominally to 60 mm** for this board. This corrects older statements that the square length is unavailable. The board was **not independently remeasured here**, nor does nominal conversion establish actual Vicon-world 3D point accuracy. Original source R/T/K/distortion remain frozen.
 
 ### Run on a previously verified, separate official external-calibration ZIP
 
@@ -194,7 +194,7 @@ sumedipose --root "D:\Research\PublicDatasets\SUMediPose\raw" --subject S6 --ste
 - The **-5 to +5 offsets** are *file/image-number* shifts in one source calibration group, **not milliseconds or proof of camera-exposure clock alignment**. Source fit frames are excluded from **both** cameras at all tested offsets.
 - Source fitting frames alone choose checkerboard orientation; all holdout frames retain that choice. The scan reports Sampson epipolar error median and 90th percentile at each shift, detection coverage, and a fairer **matched-frame-anchor** comparison against zero shift because available images change as the offset changes.
 - For zero index shift, detect an 8×6 checkerboard and independently triangulate its corners from original stereo intrinsics/extrinsics (no refitting). Reprojection back into the **same two images** gives a **stereo self-consistency** residual in pixels. The reconstructed checkerboard's neighboring edge lengths and planarity are measured in arbitrary **source chessboard-square units**.
-- A low two-view reprojection residual is **not independently measured 3D physical truth**, and an edge-length residual in board-square units must never be called a millimetre or clinical angle error. No common Vicon/camera clock or measured physical board square size is verified. Differences may reflect board detection, lens distortion, calibration stability and capture mismatch.
+- A low two-view reprojection residual is **not independent 3D physical truth**. Source board-square units can be converted into **nominal mm** using the authors' published 60-mm square length, but this is **not an independent 3D accuracy estimate**. Direct remeasurement of the physical board and common Vicon/camera capture-clock evidence are unavailable. Differences may reflect board detection, lens distortion, calibration stability and capture mismatch.
 - The source and any derived subject-level geometry files stay outside this public Git history. The code returns *aggregate scalars only*, without images, detected corners or reconstructed per-frame point clouds. No model training, new image download or clinical analysis is triggered.
 
 ## Camera-pair lens vs relative-extrinsic uncertainty audit
@@ -212,6 +212,14 @@ The audit uses only the **non-fit 8×6 checkerboard JPEG pairs** and freezes sou
 - How far the **source's frozen inter-camera R/T** projects the checkerboard seen in camera A away from the corresponding observations in camera B (cross-camera pixel error). This can respond to calibration drift, board motion between exposures, detector error and image synchronization.
 - Relative rotation angle difference (degrees) and translation difference (source board-square units) between the two independently PnP-fitted board poses and the original stereo transform. These are **not independent physical tracking or Vicon-world truth**.
 
-No cross-camera timing/clock offset, printed checkerboard square size in **millimetres**, rolling-shutter model, absolute 3D joint error or clinical accuracy is inferred. The upstream SUMediPose pipeline uses `world_scaling = 1` per board square; until the physical board square width is independently measured, translation remains in arbitrary board-square units.
+No cross-camera timing/clock offset, rolling-shutter model, absolute Vicon joint error or clinical accuracy is inferred. The paper **does** report a nominal 60-mm board square and the source calibration uses world_scaling = 1, so stereo translations can nominally be converted to mm. Direct physical board metrology and independent absolute spatial accuracy remain **unverified**.
 
 Only aggregate summary statistics are returned. Never publish JPGs, camera-specific point traces, private study outputs or source ZIPs. A high cross-camera error alongside a low per-camera PnP fit **prioritizes relative stereo calibration or capture-conditions investigation**, but cannot by itself determine which is responsible.
+
+## Third calibration-session check and corrected nominal board scale
+
+The prior S1/S6 sessions do not establish calibration quality across all acquisition days. Evaluate the **S11** calibration-day tag using the **same** frozen source R/T/K/distortion and fit-frame exclusions:
+
+    sumedipose --root "D:\Research\PublicDatasets\SUMediPose\raw" --subject S11 --paired-camera C5 --calibration-uncertainty --external-frames-zip "D:\Research\PublicDatasets\SUMediPose\source_calibration\external_frames\S11.zip" --calibration-uncertainty-json "D:\Research\PublicDatasets\SUMediPose\analysis\S11_G65_calibration_uncertainty.json"
+
+The original dataset and per-session results remain local. The **paper-reported 60-mm square length** corrects the prior assertion that the board scale is unknown; it does **not** independently validate camera-to-Vicon 3D registration, millimetre reconstruction accuracy or exact exposure-time synchronization. The board_scale module exposes the nominal conversion and the separate unverified ground-truth status.

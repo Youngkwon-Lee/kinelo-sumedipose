@@ -11,6 +11,7 @@ from pathlib import Path
 from zipfile import ZipFile
 
 import numpy as np
+from .board_scale import published_board_scale_evidence
 
 from .heldout_calibration import (
     _corners, _frame_ids, _fundamental, _symmetry,
@@ -166,7 +167,9 @@ def stereo_pair_uncertainty(raw_root, external_zip, subject="S1", paired_camera=
         "holdout_frames_declared": 60-len(fit_a),
         "holdout_frames_with_detected_paired_chessboards": detections,
         "source_checkerboard_world_scaling": 1,
-        "square_physical_size_mm_known": False,
+        "square_physical_size_mm_known": True,
+        "published_nominal_board_scale": published_board_scale_evidence(),
+        "measured_actual_board_square_size_mm_verified": False,
         "metrics": {key: _summarize(value) for key,value in stats.items()},
         "physical_exposure_clock_sync_verified": False,
         "independent_camera_world_3d_accuracy_verified": False,
@@ -174,7 +177,9 @@ def stereo_pair_uncertainty(raw_root, external_zip, subject="S1", paired_camera=
             "Single-camera board pose is fit to the SAME points used for its "
             "reprojection (not an intrinsic heldout test). Cross-camera reprojection "
             "retains original source stereo R/T. Relative pose comparisons use "
-            "an 8x6 board with square length=1 and do not establish real mm. "
+            "an 8x6 board with square length=1; the paper reports 60 mm "
+            "per square, but that nominal length does not establish "
+            "independent 3D reconstruction accuracy. "
             "Differences may arise from calibration, asynchronous exposures, "
             "board detection/orientation, rolling shutter or motion."
         ),

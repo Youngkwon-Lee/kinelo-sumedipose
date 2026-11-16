@@ -7,6 +7,7 @@ detected images; they are not independent Vicon-world 3D ground truth.
 from __future__ import annotations
 
 import numpy as np
+from .board_scale import published_board_scale_evidence
 
 
 def triangulated_board_metrics(pts_a, pts_b, params):
@@ -54,7 +55,7 @@ def triangulated_board_metrics(pts_a, pts_b, params):
 
     grid = X.reshape(6, 8, 3)
     # These units are 1/8x6 inner-corner checkerboard square as set by the
-    # source's world_scaling=1; NOT a verified physical mm measurement.
+    # world_scaling=1; the paper reports a nominal 60-mm board square.
     edges = np.r_[
         np.linalg.norm(grid[:, 1:] - grid[:, :-1], axis=2).ravel(),
         np.linalg.norm(grid[1:] - grid[:-1], axis=2).ravel(),
@@ -100,12 +101,14 @@ def aggregate_board_metrics(frame_records):
         "total_frames_submitted":len(frame_records),
         "invalid_or_low_depth_frames":len(frame_records)-len(usable),
         "board_square_size_in_mm_verified":False,
+        "published_nominal_board_scale":published_board_scale_evidence(),
         "absolute_3d_world_accuracy_verified":False,
         "independent_point_validation":False,
         "interpretation_note":(
             "Triangulated corners and reprojections derive from the same two images, "
             "and checkerboard grid is defined in source square-size=1 units. "
-            "Without measured square length, values cannot be converted to mm. "
+            "The source paper reports 60 mm per checkerboard square; any "
+            "unit-to-mm conversion is nominal, not independent 3D accuracy. "
             "This is a heldout self-consistency diagnostic, NOT independent "
             "3D Vicon point accuracy or exposure timestamp synchronization."
         ),
