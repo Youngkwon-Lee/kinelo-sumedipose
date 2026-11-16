@@ -223,3 +223,31 @@ The prior S1/S6 sessions do not establish calibration quality across all acquisi
     sumedipose --root "D:\Research\PublicDatasets\SUMediPose\raw" --subject S11 --paired-camera C5 --calibration-uncertainty --external-frames-zip "D:\Research\PublicDatasets\SUMediPose\source_calibration\external_frames\S11.zip" --calibration-uncertainty-json "D:\Research\PublicDatasets\SUMediPose\analysis\S11_G65_calibration_uncertainty.json"
 
 The original dataset and per-session results remain local. The **paper-reported 60-mm square length** corrects the prior assertion that the board scale is unknown; it does **not** independently validate camera-to-Vicon 3D registration, millimetre reconstruction accuracy or exact exposure-time synchronization. The board_scale module exposes the nominal conversion and the separate unverified ground-truth status.
+
+
+## Calibration-stratified pose benchmark (exploratory)
+
+Use the **five-session** calibration summary (S1, S6, S11, S17, S23) to explore whether C6-C5 stereo epipolar residuals covary with knee-angle MAE from **monocular** MediaPipe Lite/Full pose inference. This is not a causal test or clinical quality gate: stereo calibration and monocular model error are distinct quantities, and every session is associated with its own subject/recording.
+
+**Input files stay in the private Windows analysis folder** (never check in the results). The comparison reads:
+
+- S1_S6_S11_S17_S23_calibration_five_session_overview.json
+- S1A3_mediapipe_lite_full_protocol.json (model asset SHA256, D2 and 24-image sampling)
+- S1A3_pose_SUBJECT_CAMERA_VARIANT.json for each S1/S6/S11/S17/S23, C1/C6, lite/full (20 model reports total)
+
+The original 192-image pilot only evaluated **S6/S11/S17/S23**. S1 was previously used to tune optical-flow ROI settings and was not part of that heldout pilot. Do not claim a five-session association until S1 has been evaluated with the same model weights and sampling. If missing, create only the four S1 aggregate results on the authorized Windows computer:
+
+~~~powershell
+$root = "D:\Research\PublicDatasets\SUMediPose"
+foreach ($camera in @("C1", "C6")) {
+    foreach ($model in @("lite", "full")) {
+        $filename = "S1A3_pose_S1_{0}_{1}.json" -f $camera, $model
+        sumedipose --root "$root\raw" --camera $camera --subject S1 --repeat D2 --pose-baseline --model-task "$root\models\pose_landmarker_$model.task" --max-frames 24 --benchmark-json "$root\analysis\$filename"
+    }
+}
+python -m sumedipose.calibration_strata --analysis-dir "$root\analysis" --output "$root\analysis\S1A3_calibration_stratified_pose_overview.json"
+~~~
+
+**Interpretation and safeguards:** calculate equal-*session*-weight descriptive Spearman correlations, never pool individual frames as independent observations. C1 is a view control alongside C6; the script also reports descriptive C6-minus-C1 MAE contrasts. Compare Lite vs Full **within the same 2D or 3D reference space**, not 2D projected-Vicon errors directly against 3D WCS errors. The high/low split at **5 px** of G65 epipolar error was chosen **post-hoc**, not as a clinical threshold. No inferential p-values, clinical accept/reject decision, exposure-time synchronization or training-set overlap audit are supplied.
+
+The tool refuses to claim a complete five-session comparison when any required model/view report or valid knee-angle session measurement is absent. It rejects sample/model-SHA/24-image protocol inconsistencies. Reports contain aggregate scalar associations only, not RGB photos, per-frame poses or participant-level measurements. Output must remain outside this public Git checkout; existing output files are never overwritten.
