@@ -1,4 +1,4 @@
-"""Small local-only command-line interface for SUMediPose A3."""
+"""Small local-only command-line interface for SUMediPose A3 and A4 pose baseline."""
 from __future__ import annotations
 
 import argparse
@@ -15,6 +15,7 @@ def main(argv=None):
     parser.add_argument("--camera", default="C1")
     parser.add_argument("--subject", default="S1")
     parser.add_argument("--repeat", default="D1")
+    parser.add_argument("--action", choices=("A3","A4"), default="A3", help="Exercise: A3 squat or A4 deadlift (pose baseline / sample inspection)")
     parser.add_argument("--preview", help="Optional output PNG path (requires .[viz])")
     parser.add_argument("--audit", action="store_true", help="Audit A3 WCS-camera-RGB record mappings")
     parser.add_argument("--mapping-csv", help="Local output path for per-record mapping (requires --audit)")
@@ -54,6 +55,8 @@ def main(argv=None):
     parser.add_argument("--calibration-uncertainty-json",
                         help="Local-only aggregate lens and stereo calibration uncertainty JSON")
     args = parser.parse_args(argv)
+    if args.action == "A4" and (args.audit or args.motion_audit or args.wand_fit or args.timestamp_evidence or args.preview):
+        parser.error("A4 is supported for sample inspection and pose baseline only; other audits remain A3-only")
     if not args.audit and (args.mapping_csv or args.audit_json):
         parser.error("--mapping-csv and --audit-json require --audit")
 
@@ -99,7 +102,7 @@ def main(argv=None):
             path.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
             print(f"Audit saved locally: {path}")
     elif not (args.stereo_holdout or args.stereo_lag or args.calibration_uncertainty):
-        _, world, camera = read_sample(args.root, camera=args.camera, subject=args.subject, repeat=args.repeat)
+        _, world, camera = read_sample(args.root, camera=args.camera, subject=args.subject, action=args.action, repeat=args.repeat)
         summary = record_summary(world, camera)
         if world:
             summary["first_wcs_knee_angles"] = knee_angles(world[0])
@@ -179,7 +182,7 @@ def main(argv=None):
         from .benchmark import evaluate_pose_model
         finding=evaluate_pose_model(
             args.root, args.model_task, camera=args.camera, subject=args.subject,
-            repeat=args.repeat, max_frames=args.max_frames,
+            repeat=args.repeat, max_frames=args.max_frames, action=args.action,
         )
         print(json.dumps(finding, ensure_ascii=False, indent=2))
         if args.benchmark_json:

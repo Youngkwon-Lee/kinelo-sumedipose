@@ -41,3 +41,23 @@ def test_summary_error_handling():
     assert m["fraction_abs_error_over_20_degrees"]==0
     empty=summarize_errors([math.nan],attempted=2)
     assert empty["valid"]==0 and empty["MAE_degrees"] is None
+
+def test_a4_pose_baseline_routes_action_to_original_zip_reader(monkeypatch, tmp_path):
+    '''No participant data or model weights required.'''
+    import sys
+    import types
+    import pytest
+    from sumedipose import benchmark
+    model=tmp_path / "pose_landmarker_lite.task"
+    model.write_bytes(b"synthetic-model-placeholder")
+    monkeypatch.setitem(sys.modules, "mediapipe", types.ModuleType("mediapipe"))
+    monkeypatch.setitem(sys.modules, "cv2", types.ModuleType("cv2"))
+    seen={}
+    def check_reader(root, **kwargs):
+        seen.update(kwargs)
+        raise RuntimeError("sample-reader-called")
+    monkeypatch.setattr(benchmark, "read_sample", check_reader)
+    with pytest.raises(RuntimeError, match="sample-reader-called"):
+        benchmark.evaluate_pose_model(tmp_path, model, camera="C6", subject="S11",
+                                      repeat="D2", max_frames=24, action="A4")
+    assert seen==dict(camera="C6", subject="S11", action="A4", repeat="D2")

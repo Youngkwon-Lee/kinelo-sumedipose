@@ -268,3 +268,17 @@ python -m sumedipose.new_subject_validation --analysis-dir $folder --output "$fo
 Source code and synthetic tests may be published, but **never the per-subject report JSONs, original image archives, model weights, or detected coordinates**. The command fails closed on any missing/mismatched report or model SHA, and refuses to overwrite an existing report or write it under the public repository.
 
 Exploratory results from the new participants (five original calibration groups, not ten independent sessions): C6 3D WCS knee-angle MAE vs G65 residual had **rho 0.60 (Lite)** and **0.50 (Full)**, compared with **0.90/0.70** in the anchor participants. This is positive but weaker evidence; C1 and 2D comparisons are not consistently specific to C6. The five-group sample, within-session participant sharing, model/Vicon landmark differences, lack of raw hardware exposure timestamps, and possible model-training data overlap prevent inference of clinical 3D accuracy. All three repeats are **squats**, not independent exercise types.
+
+## A4 deadlift action-generalization pilot
+
+Set --action A4 to run the same MediaPipe Lite/Full benchmark on a deadlift recording; the default remains --action A3. Only sample inspection and pose benchmarking support A4; timing/calibration audit commands remain A3-specific.
+
+Example (use approved local storage paths):
+
+    sumedipose --root DATASET_ROOT --action A4 --camera C1 --subject S1 --repeat D2 --pose-baseline --model-task LOCAL_MODEL_LITE_TASK --max-frames 24 --benchmark-json PRIVATE_A4_SUMMARY_JSON
+
+Once all five matching calibration anchors (S1, S6, S11, S17 and S23) have A4 reports for C1/C6 and Lite/Full, generate the paired descriptive summary:
+
+    python -m sumedipose.action_generalization --analysis-dir PRIVATE_ANALYSIS_DIR --output PRIVATE_SUMMARY_JSON
+
+The A3 and A4 comparison is five paired calibration groups, not ten independent calibration trials. G65 C6-C5 stereo residuals are not direct evidence of monocular accuracy. Physical capture synchronization, Vicon-vs-model landmark equivalence and clinical knee-angle validity remain unverified. Original RGB ZIP, Vicon coordinates, local model assets and all participant-level reports are excluded from Git.

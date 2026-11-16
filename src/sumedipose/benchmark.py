@@ -56,7 +56,7 @@ def summarize_errors(errors, attempted):
 
 
 def evaluate_pose_model(root, model_asset_path, camera="C1", subject="S6",
-                       repeat="D2", max_frames=40, min_visibility=.5):
+                       repeat="D2", max_frames=40, min_visibility=.5, action="A3"):
     """Run actual RGB inference; return aggregate errors, no raw images or keypoints."""
     if not 0 <= min_visibility <= 1:
         raise ValueError("min_visibility must be in [0,1]")
@@ -67,7 +67,7 @@ def evaluate_pose_model(root, model_asset_path, camera="C1", subject="S6",
     if not model_asset_path.is_file():
         raise FileNotFoundError(f"Model asset missing: {model_asset_path}")
     paths, world, cam = read_sample(root,camera=camera,subject=subject,
-                                   action="A3",repeat=repeat)
+                                   action=action,repeat=repeat)
     if len(world)!=len(cam):
         raise ValueError("WCS and camera records must be index aligned")
     errors = {"image_2d":{"left":[],"right":[]},"world_3d":{"left":[],"right":[]}}
@@ -117,7 +117,8 @@ def evaluate_pose_model(root, model_asset_path, camera="C1", subject="S6",
     with model_asset_path.open("rb") as fh:
         model_hash = hashlib.sha256(fh.read()).hexdigest()
     return {
-        "sample":f"{camera}{subject}A3{repeat}",
+        "sample":f"{camera}{subject}{action}{repeat}",
+        "action":action,
         "model":"Google MediaPipe Pose Landmarker (one model, two output spaces)",
         "model_variant":model_asset_path.stem.replace("pose_landmarker_",""),
         "model_asset_sha256":model_hash,
