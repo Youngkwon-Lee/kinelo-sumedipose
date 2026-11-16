@@ -269,45 +269,6 @@ Source code and synthetic tests may be published, but **never the per-subject re
 
 Exploratory results from the new participants (five original calibration groups, not ten independent sessions): C6 3D WCS knee-angle MAE vs G65 residual had **rho 0.60 (Lite)** and **0.50 (Full)**, compared with **0.90/0.70** in the anchor participants. This is positive but weaker evidence; C1 and 2D comparisons are not consistently specific to C6. The five-group sample, within-session participant sharing, model/Vicon landmark differences, lack of raw hardware exposure timestamps, and possible model-training data overlap prevent inference of clinical 3D accuracy. All three repeats are **squats**, not independent exercise types.
 
-
-## A3/D2 metadata-index sensitivity and joint-angle bias pilot
-
-Run a *local-only* follow-up to the 26-available-participant descriptive study. This is a
-**five-calibration-group anchor pilot**, not an independent validation of 26 camera
-calibration sessions. It deliberately does **not** modify the previous 104 reports.
-
-From an editable checkout, with the frozen Lite/Full assets and the existing A3 protocol
-already on the Windows research PC:
-
-```powershell
-$repo = (Get-Location).Path  # run from the kinelo-sumedipose checkout
-$base = "D:\Research\PublicDatasets\SUMediPose"
-$env:PYTHONPATH = Join-Path $repo "src"
-python -m sumedipose.frame_joint_pilot --root "$base\raw" --model-dir "$base\models" --analysis-dir "$base\analysis" --output "$base\analysis\A3_D2_frame_joint_pilot_5anchors_local_20261116.json" --aggregate-output "$base\analysis\A3_D2_frame_joint_pilot_5anchors_aggregate_20261116.json"
-```
-
-- Frozen input: S1/S6/S11/S17/S23, squat A3/D2, front C1 and rear C6,
-  MediaPipe Lite/Full, **24 unique RGB images per combination**, same model
-  SHA256 as the earlier generalization protocol.
-- Compare model 2D knee angles **only** against projected Vicon 2D angles,
-  and model 3D knee angles **only** against Vicon WCS 3D included angles.
-  Keep the original >=0.5 visibility filter for left/right sides.
-- Report baseline angular MAE, mean signed bias and signed-error SD. These
-  diagnose systematic offset but **cannot attribute it to different anatomical
-  joint-centre definitions** without a separate landmark mapping.
-- Evaluate fixed WCS/camera **coordinate record-index shifts**
-  `(-12,-6,-3,0,3,6,12)` against the **same valid observations** at every
-  shift, including shift zero. The smallest *in-sample* MAE is a sensitivity
-  diagnostic only: it **does not discover real camera/Vicon exposure delay**.
-  Source frame number, duplicate RGB-to-record mappings and raw hardware time
-  are not interchangeable. Actual exposure synchronization remains unverified.
-- Write private per-anchor reports and non-identifying aggregates **only** to
-  the local Windows `D:\Research\PublicDatasets\SUMediPose\analysis`
-  directory. Existing outputs cannot be overwritten. Do not upload raw JPEG,
-  ZIP, joint coordinates, keypoints or participant-level JSON to GitHub,
-  Second Brain, Kinelo Ops, Notion or Google Drive. S1 was involved in
-  earlier ROI tuning; the pilot is not an independent holdout or a clinical
-  accuracy assessment.
 ## A4 deadlift action-generalization pilot
 
 Set --action A4 to run the same MediaPipe Lite/Full benchmark on a deadlift recording; the default remains --action A3. Only sample inspection and pose benchmarking support A4; timing/calibration audit commands remain A3-specific.
@@ -321,3 +282,7 @@ Once all five matching calibration anchors (S1, S6, S11, S17 and S23) have A4 re
     python -m sumedipose.action_generalization --analysis-dir PRIVATE_ANALYSIS_DIR --output PRIVATE_SUMMARY_JSON
 
 The A3 and A4 comparison is five paired calibration groups, not ten independent calibration trials. G65 C6-C5 stereo residuals are not direct evidence of monocular accuracy. Physical capture synchronization, Vicon-vs-model landmark equivalence and clinical knee-angle validity remain unverified. Original RGB ZIP, Vicon coordinates, local model assets and all participant-level reports are excluded from Git.
+
+## Next validation: genuinely independent camera calibration sessions
+
+The existing SUMediPose A3 and A4 results share five daily camera calibration sessions. Increasing participants, exercises, views or image-inference counts does not create new independent calibration evidence. For the prospective capture design, held-out C6-C5 stereo-quality measure, capture-synchronization gates, privacy and external dataset limitations, see [Independent calibration-session validation protocol v1](docs/independent-calibration-study-v1.md). No new calibration acquisition is claimed.
