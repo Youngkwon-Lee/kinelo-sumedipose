@@ -20,7 +20,7 @@ Requires Python 3.10+:
 ```powershell
 git clone https://github.com/Youngkwon-Lee/kinelo-sumedipose.git
 cd kinelo-sumedipose
-python -m pip install -e ".[test,viz]"
+python -m pip install -e ".[test,viz,image]"
 python -m pytest -q
 ```
 
@@ -95,3 +95,27 @@ The audit exposes three distinct results:
 - `complete_rgb_alignment_audit_pass`: both checks and sequence diagnostics pass; this is **structural** validation, not independently validated video/Vicon timestamp synchronization.
 
 `physical_timestamp_synchronization_verified` remains **false** until exposure timestamps, calibration and hardware clock or independently measurable temporal events have been checked. The first/last RGB frame numbers can differ substantially from WCS frame numbers; never join by equality of their numeric `frame_num` fields. See `DATA_POLICY.md` before sharing any outputs.
+
+## RGB-motion timing plausibility and calibration inventory
+
+The optional image workflow uses **real RGB JPEG pixels** and forward/backward Lucas-Kanade optical flow. It compares upper-torso image feature motion against the source-provided projected C7/CLAV displacement. Each pair spans six **unique available RGB images** by default, not six WCS frames or known milliseconds.
+
+```powershell
+sumedipose --root "D:\Research\PublicDatasets\SUMediPose\raw" --subject S1 --camera C1 --repeat D1 --motion-audit --stride 6 --motion-json "D:\Research\PublicDatasets\SUMediPose\analysis\C1S1A3D1_motion_audit.json"
+```
+
+Read the original external calibration metadata and matrix structures:
+
+```powershell
+sumedipose --root "D:\Research\PublicDatasets\SUMediPose\raw" --subject S1 --calibration-inventory --calibration-json "D:\Research\PublicDatasets\SUMediPose\analysis\S1_external_calibration_inventory.json"
+```
+
+- Aggregate reports are **local-only** JSON. No RGB images or per-frame pixel tracks are saved or published.
+- Missing RGB references, including known terminal frames, are **masked** rather than interpolated, generated or re-downloaded. The same image can map to multiple 3D records.
+- Lag units are sampled image **pairs**, not frames or seconds. The exploratory screen requires >=15 valid pairs, lag-0 Pearson correlation >=0.8 and best across tested lags, plus median absolute displacement error <3 pixels at the resized analysis resolution. These are **heuristics**, not clinical thresholds.
+- The tracking ROI is selected with source-provided, WCS-derived camera 2D markers. Image features move independently in pixel space, but torso localization is **not blind**. Positive evidence supports motion correspondence plausibility only.
+- A failure or nonzero best lag may reflect view occlusion, feature tracking limitations, image sampling, calibration, or real temporal mismatch. It is **not** proof of a hardware clock offset.
+- Calibration inventory verifies source CSV entries and the existence, finite values and shapes of R/T/intrinsics matrices. Source calibration error values have **unverified units**; independent RGB reprojection accuracy has not been tested.
+- Physical exposure timestamp sync, 2D/3D model benchmark accuracy and clinical validity remain **unverified** regardless of the exploratory score.
+
+Install the optional OpenCV support using `pip install -e ".[image]"`; no dataset download occurs.

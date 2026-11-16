@@ -19,9 +19,19 @@ def main(argv=None):
     parser.add_argument("--audit", action="store_true", help="Audit A3 WCS-camera-RGB record mappings")
     parser.add_argument("--mapping-csv", help="Local output path for per-record mapping (requires --audit)")
     parser.add_argument("--audit-json", help="Local output path for aggregate audit (requires --audit)")
+    parser.add_argument("--motion-audit", action="store_true", help="Compare RGB optical flow with projected torso motion")
+    parser.add_argument("--motion-json", help="Local-only aggregate motion audit JSON (requires --motion-audit)")
+    parser.add_argument("--stride", type=int, default=6, help="Unique RGB frames per optical-flow pair")
+    parser.add_argument("--calibration-inventory", action="store_true", help="Inspect source-provided calibration matrix structure")
+    parser.add_argument("--calibration-json", help="Local calibration inventory JSON (requires --calibration-inventory)")
     args = parser.parse_args(argv)
     if not args.audit and (args.mapping_csv or args.audit_json):
         parser.error("--mapping-csv and --audit-json require --audit")
+
+    if args.motion_json and not args.motion_audit:
+        parser.error("--motion-json requires --motion-audit")
+    if args.calibration_json and not args.calibration_inventory:
+        parser.error("--calibration-json requires --calibration-inventory")
 
     if args.audit:
         from .sync import audit_sample, save_mapping
@@ -41,6 +51,26 @@ def main(argv=None):
         if world:
             summary["first_wcs_knee_angles"] = knee_angles(world[0])
         print(json.dumps(summary, ensure_ascii=False, indent=2))
+
+    def save_json(path, record):
+        path = Path(path)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps(record, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+        return path
+
+    if args.motion_audit:
+        from .temporal import optical_flow_audit
+        finding = optical_flow_audit(args.root, args.camera, args.subject, args.repeat, stride=args.stride)
+        print(json.dumps(finding, ensure_ascii=False, indent=2))
+        if args.motion_json:
+            print(f"Motion report saved locally: {save_json(args.motion_json, finding)}")
+
+    if args.calibration_inventory:
+        from .calibration import external_calibration_inventory
+        finding = external_calibration_inventory(args.root, args.subject)
+        print(json.dumps(finding, ensure_ascii=False, indent=2))
+        if args.calibration_json:
+            print(f"Calibration report saved locally: {save_json(args.calibration_json, finding)}")
 
     if args.preview:
         from .viz import preview
