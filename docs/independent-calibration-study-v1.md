@@ -57,3 +57,15 @@ A useful **feasibility target (assumption, not a power calculation)** is at leas
 For a new locally completed session, start from `docs/independent-calibration-session-template.json`, keep the **populated** copy private, and validate independently before updating group counts. **Never commit filled individual/session-level manifests to the public repository.**
 
 Research governance: see [DATA_POLICY.md](../DATA_POLICY.md).
+
+## Privacy-preserving preflight (synthetic and future private records)
+
+Use the code-only readiness gate before any new calibration session can be considered for an **independent** calibration count. Its current blank example should **fail closed**:
+
+```powershell
+python -m sumedipose.session_preflight --session docs/independent-calibration-session-template.json
+```
+
+This command returns `status=blocked`, an ordered list of *gate names only*, and `new_independent_calibration_sessions_added=0`. It intentionally exits with status 2 for an incomplete manifest. It checks equipment availability confirmation, a new rig-calibration record, C1/C5/C6 geometry and G65 compatibility, 60-mm metric board, frozen fit/held-out board frames, timestamps and Vicon reference, paired A3/A4, model/24-image protocol, and required permission assertions. The **template defaults to all gates incomplete**, and its contents are synthetic only.
+
+After collecting genuine evidence with necessary approvals, **copy the template outside Git into approved private storage**, populate it there, and run the same command against that private file. Even `ready_for_human_evidence_review` is **not proof** that the data, hardware timestamps, permissions or an independent calibration acquisition exist: a researcher must inspect primary evidence and separately approve any increase to independent-session n. The script *never* increments n, publishes subject/rig details, or exports input metadata. Do not store private, session-level completed manifests, personnel or patient identifiers, calibration archives, credentials or raw recordings in the public repository.
