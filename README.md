@@ -145,3 +145,22 @@ sumedipose --root "D:\Research\PublicDatasets\SUMediPose\raw" --camera C6 --subj
 ```
 
 This bounded evidence inventory is **not an exhaustive search for all possible source log files**. Camera `frame_num`, `frame_num_w_drop`, ZIP modification dates, and post-hoc stomp alignment do **not** establish a common hardware clock. All results retain independent synchronization as unverified until original frame-timestamp logs or hardware sync-event evidence is available. Only aggregate JSON leaves the original ZIP reader; keep all per-record outputs local.
+
+## Reproducible pose-model feasibility benchmark
+
+Optional local-only `MediaPipe Pose Landmarker` benchmark: two Google-released weights (`Lite` and `Full`) each output **both 2D image landmarks and 3D world landmarks from the same model**. The two weight variants are distinct model sizes, not independent 2D and 3D architectures.
+
+Install optional dependencies: `python -m pip install -e ".[benchmark]"`. Download the official model `.task` asset separately (for example, from [Google's Pose Landmarker documentation](https://developers.google.com/edge/mediapipe/solutions/vision/pose_landmarker)), place it **outside this Git repository**, and verify its integrity.
+
+```powershell
+sumedipose --root "D:\Research\PublicDatasets\SUMediPose\raw" --camera C1 --subject S6 --repeat D2 --pose-baseline --model-task "D:\Research\PublicDatasets\SUMediPose\models\pose_landmarker_lite.task" --max-frames 24 --benchmark-json "D:\Research\PublicDatasets\SUMediPose\analysis\S1A3_pose_S6_C1_lite.json"
+```
+
+Each run selects up to 24 **evenly spaced unique available RGB JPEG files**. Their camera metadata supplies a coordinate-record index; the WCS index is checked for equal record count. Only valid pose detections with all hip/knee/ankle landmarks visible at `>=0.5` are scored. Results contain only **aggregate** joint-angle absolute error, RMSE, median, p90, and missed-detection counts; no source images or per-frame landmarks are saved.
+
+- **2D metric:** the 2D included hip–knee–ankle angle estimated from model image landmarks is compared with the 2D angle formed by Vicon joint-centre projections (`LHJC/LKJC/LAJC`, equivalent on right), in pixel coordinates (aspect ratio preserved).
+- **3D metric:** the 3D included angle estimated from model hip-centred world landmarks is compared with the angle formed by Vicon WCS 3D joint centres. Angle is invariant to overall scale and rigid rotation.
+- **Do not directly compare 2D and 3D MAE as model superiority:** the geometric reference angle is different in 2D vs 3D, and MediaPipe's anatomical landmarks do not match the Vicon joint-centre definitions exactly. Within one reference modality, compare Lite and Full using identical images, labels and visibility rules.
+- **No clinical validation:** no held-out model-training provenance audit, calibration into Vicon coordinates, independent capture timestamp proof, population-level statistical inference, or clinical knee ROM definitions were established. This is an offline feasibility pilot, not a medical device assessment.
+
+Record the exact model URL, SHA256, MediaPipe runtime version, source data selection and per-participant grouping in a **local-only** protocol. Do not publish identifiable RGB videos, per-participant predictions, private manifests or evaluation images.

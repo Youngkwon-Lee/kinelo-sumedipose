@@ -22,3 +22,7 @@ This package is an exploratory research aid, not a validated clinical interpreta
 ## Known local example (not part of Git)
 
 On the authorized workstation, originals were kept separately at `D:\Research\PublicDatasets\SUMediPose\raw`. This path is a local usage example, not an upload target. It is not needed to run CI.
+
+## Third-party models and derived evaluations
+
+MediaPipe model weights (.task) are downloaded separately from their official distributor and must remain outside Git. Their own license/usage terms govern them; this repository's MIT license applies only to our original code, not those weights. SUMediPose source data and derivative outputs remain subject to the source dataset terms (CC BY-NC-SA 4.0 as recorded in the official Dataverse manifest). Subject-level evaluation JSON remains local and is not committed.

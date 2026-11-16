@@ -38,3 +38,6 @@ build/
 dist/
 *.egg-info/
 .DS_Store
+# Third-party model weights must remain local
+*.task
+models/

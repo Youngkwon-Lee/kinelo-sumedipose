@@ -31,6 +31,10 @@ def main(argv=None):
     parser.add_argument("--wand-json", help="Local-only source wand residual JSON")
     parser.add_argument("--timestamp-evidence", action="store_true", help="Audit availability of raw capture time fields")
     parser.add_argument("--timestamp-json", help="Local-only timestamp evidence inventory JSON")
+    parser.add_argument("--pose-baseline", action="store_true", help="Run local-only MediaPipe 2D/3D geometric angle feasibility benchmark")
+    parser.add_argument("--model-task", help="Local model .task file (required with --pose-baseline)")
+    parser.add_argument("--max-frames", type=int, default=24, help="Max unique sample images for pose baseline")
+    parser.add_argument("--benchmark-json", help="Local aggregate benchmark JSON output (requires --pose-baseline)")
     parser.add_argument("--calibration-inventory", action="store_true", help="Inspect source-provided calibration matrix structure")
     parser.add_argument("--calibration-json", help="Local calibration inventory JSON (requires --calibration-inventory)")
     args = parser.parse_args(argv)
@@ -45,6 +49,10 @@ def main(argv=None):
         parser.error("--wand-json requires --wand-fit")
     if args.timestamp_json and not args.timestamp_evidence:
         parser.error("--timestamp-json requires --timestamp-evidence")
+    if args.pose_baseline and not args.model_task:
+        parser.error("--pose-baseline requires --model-task")
+    if args.benchmark_json and not args.pose_baseline:
+        parser.error("--benchmark-json requires --pose-baseline")
 
     if args.audit:
         from .sync import audit_sample, save_mapping
@@ -103,6 +111,16 @@ def main(argv=None):
         print(json.dumps(finding, ensure_ascii=False, indent=2))
         if args.timestamp_json:
             print(f"Timestamp evidence saved locally: {save_json(args.timestamp_json, finding)}")
+
+    if args.pose_baseline:
+        from .benchmark import evaluate_pose_model
+        finding=evaluate_pose_model(
+            args.root, args.model_task, camera=args.camera, subject=args.subject,
+            repeat=args.repeat, max_frames=args.max_frames,
+        )
+        print(json.dumps(finding, ensure_ascii=False, indent=2))
+        if args.benchmark_json:
+            print(f"Pose baseline summary saved locally: {save_json(args.benchmark_json, finding)}")
 
     if args.preview:
         from .viz import preview
