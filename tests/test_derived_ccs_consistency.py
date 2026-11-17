@@ -120,6 +120,8 @@ def test_grouped_26_subjects_do_not_inflate_independent_calibration_n():
     assert len(d["group_results"]) == 4
     assert d["WCS_to_derived_CCS_segment_length_ratio_median"] == 60
     assert d["A3_WCS_records_without_timestamp_keys"] == 52
+    assert d["A4_WCS_records_without_timestamp_keys"] == 10
+    assert d["A4_derived_CCS_records_without_timestamp_keys"] == 10
     assert all(z["reflected_fit_better_in_subject_camera_cases"] == z[
         "source_subject_records"] for z in d["group_results"])
     assert d["independent_calibration_groups"] == 5
