@@ -101,6 +101,8 @@ def _sample_source(root: Path, subject: str, camera: str, action: str):
     c_indices = [records[0]["point_ids"].index(j) for j in GT_JOINTS]
     with ZipFile(paths["rgb"]) as archive:
         picks, qa = strict_unique_pairs(records, archive.namelist(), SAMPLED)
+    if qa["selected_jpg_names_different_from_previous"]:
+        raise ValueError("Source-valid JPEG selection differs from frozen original images")
     wcs, ccs = [], []
     for _, idx in picks:
         x = np.asarray(world[idx]["xyz"], float)[w_indices]
@@ -227,6 +229,10 @@ def aggregate(rows: list[dict], subject_map: dict[str, str]) -> dict:
         "fit_scale_CCS_units_per_WCS_native"] for r in rows]
     missing_wcs = sum(not r["A3"]["original_WCS_timestamp_keys"] for r in rows)
     missing_camera = sum(not r["A3"]["original_camera_timestamp_keys"] for r in rows)
+    missing_a4_wcs = sum(r["A4"] is not None and
+                         not r["A4"]["original_WCS_timestamp_keys"] for r in rows)
+    missing_a4_cam = sum(r["A4"] is not None and
+                         not r["A4"]["original_camera_timestamp_keys"] for r in rows)
     return {
         "status": "complete_derived_Vicon_coordinate_consistency_audit",
         "study": "SUMediPose D2 A3 full 26 and A4 five anchors Vicon WCS-to-derived-CCS integrity",
@@ -244,6 +250,8 @@ def aggregate(rows: list[dict], subject_map: dict[str, str]) -> dict:
         "reflected_fit_CCS_per_WCS_scale_median": round(median(scale), 9),
         "A3_WCS_records_without_timestamp_keys": missing_wcs,
         "A3_derived_CCS_records_without_timestamp_keys": missing_camera,
+        "A4_WCS_records_without_timestamp_keys": missing_a4_wcs,
+        "A4_derived_CCS_records_without_timestamp_keys": missing_a4_cam,
         "group_results": findings,
         "no_absolute_camera_or_model_registration_verified": True,
         "no_physical_camera_Vicon_common_clock_evidence": True,
