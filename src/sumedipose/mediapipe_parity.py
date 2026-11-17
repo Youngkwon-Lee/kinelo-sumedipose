@@ -107,7 +107,7 @@ def one_recording(root: Path, subject: str, camera: str,
         "A4_source_audit": a4_source,
         "fits": fits,
         "test_frames_used_for_fit": False,
-        "Vicon_GТ_hip_root_used_in_evaluation": True,
+        "Vicon_GT_hip_root_used_in_evaluation": True,
         "per_frame_model_or_reference_coordinates_saved": False,
         "physical_mpjpe_mm_validated": False,
     }
