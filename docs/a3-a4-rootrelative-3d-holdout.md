@@ -52,3 +52,28 @@ The command freezes SHA256 against the existing A3 26-subject protocol; refuses 
 - [ ] Zero new independent calibration groups, no claim of validated absolute capture synchronization, anatomical equivalence or new patient/participant recording.
 
 Any next attempt at true `MPJPE(mm)` requires independent proof of absolute WCS units, camera-to-Vicon position/orientation registration, exact frame timestamps, and a harmonized anatomical landmark reference — all unverified here.
+
+## 2026-11-17 — empirical execution and independent local readback
+
+The diagnostic ran on the authorized Windows research PC with the **frozen A3 26-person model asset hashes**, **5 historical calibration groups** (no new calibration), **2 camera views**, **2 models**, **2 actions** and **24 unique original RGB images per recording**. Results: **40 model×recording runs, 960 model-image inferences, 933 pose detections**. Each participant/view/model fitted one fixed proper rotation and positive scale from **A3 first 12 slots only**; at least six valid frames were available in each A3 train, A3 held-out and A4 held-out set.
+
+After strict source matching, the exact **same 24 source JPEG filenames** per recording were selected as in the old five-anchor baselines. Their previously incorrect coordinate-index pairings numbered **8/480 unique JPEG instances**, repaired in this new calculation without replacing source RGB images. This does **not** retrospectively recompute or correct the old A3/A4 angular-correlation statistics.
+
+**Held-out six-joint root-relative discrepancy, percent of Vicon reference femur length, median of five equal-weight session means:**
+
+| Camera | Model | A3 held-out last 12 | A4 cross-action all 24 |
+|---|---|---:|---:|
+| C1 front | Lite | **37.28%** | **43.29%** |
+| C1 front | Full | **38.82%** | **44.74%** |
+| C6 rear | Lite | **26.71%** | **29.95%** |
+| C6 rear | Full | **35.52%** | **35.09%** |
+
+The independent local **aggregate readback recomputed 8/8 cells** from 20 private per-participant/view/model summary rows; sample counts, model SHA256, source mapping, five-group weighting, and no-physical-MPJPE flags were checked. Windows synthetic suite: **79/79 passed** on head `cba53a174db517c6522bce2c7407d452acf61c61` (the code SHA before this documentation-only addition). The PR's final head and CI must be checked separately.
+
+Local-only research outputs (do not commit/upload contents):
+
+- `A3_A4_rootrelative_holdout_private_20261117.json`: participant-level recording summaries and fit-scale diagnostics, **not** source XYZ or RGB frames
+- `A3_A4_rootrelative_holdout_aggregate_20261117.json`: approved aggregate candidate
+- `A3_A4_rootrelative_holdout_readback_20261117.json`: independent aggregate arithmetic readback
+
+All three reside under the existing approved Windows research analysis directory. No raw image, Vicon XYZ trajectory, person-level result or model weight was uploaded. **Crucial:** these percentages are *supervised A3-aligned, frame-root-centred geometry*; test-frame Vicon hip centres were used for centering, and A3/A4 evaluated different segments of their actions. The apparent C6 Lite advantage on this metric cannot be interpreted as general 3D accuracy, true MPJPE(mm), absolute root tracking, independent participant generalization, anatomy-matched joint positions, or proof of hardware timestamp synchronization. Further physical-camera/Vicon registration and joint-centre harmonization are separate, unexecuted research requirements.
