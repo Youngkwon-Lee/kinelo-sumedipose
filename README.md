@@ -294,3 +294,7 @@ The existing [A3/D2 frame-index and signed angle-bias pilot](docs/a3-d2-frame-jo
 ## Experimental root-relative 3D position geometry (not MPJPE)
 
 A strict `dup_num == factor` RGB-to-WCS mapping audit identified eight dropped-frame placeholder reference pairs in the historical five-anchor A3/A4 sampling. The [held-out A3→A4 root-relative six-joint diagnostic](docs/a3-a4-rootrelative-3d-holdout.md) fixes source frame selection, fits one similarity transform on A3 training frames, and checks frozen 3D **shape** discrepancy on held-out A3/A4. It does **not** validate absolute XYZ positions, real-world MPJPE, anatomical joint-centre equivalence, or physical Vicon-video timing; filled reports stay on the private research drive.
+
+## A3 26-person / A4 anchor strict source-reference sensitivity
+
+A frozen-image [Vicon source-frame correspondence recheck](docs/a3-26-a4-5-strict-vicon-reference-recheck.md) pairs each identical MediaPipe pose prediction against the original midpoint coordinate index and the `dup_num == factor` source-valid coordinate index. It recomputes descriptive G65-versus-angle-MAE correlations at the **same five historical calibration groups** and preserves raw/participant outputs on private local storage. This checks reference-index sensitivity, not independently synchronized capture timestamps, causal calibration effects, absolute XYZ MPJPE, or medical validity.
