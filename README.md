@@ -298,3 +298,7 @@ A strict `dup_num == factor` RGB-to-WCS mapping audit identified eight dropped-f
 ## A3 26-person / A4 anchor strict source-reference sensitivity
 
 A frozen-image [Vicon source-frame correspondence recheck](docs/a3-26-a4-5-strict-vicon-reference-recheck.md) pairs each identical MediaPipe pose prediction against the original midpoint coordinate index and the `dup_num == factor` source-valid coordinate index. It recomputes descriptive G65-versus-angle-MAE correlations at the **same five historical calibration groups** and preserves raw/participant outputs on private local storage. This checks reference-index sensitivity, not independently synchronized capture timestamps, causal calibration effects, absolute XYZ MPJPE, or medical validity.
+
+## Vicon-derived WCS ↔ camera XYZ axis-parity audit (not physical MPJPE)
+
+The [WCS ↔ derived camera XYZ parity audit](docs/wcs-ccs-coordinate-parity-and-mpjpe-gates.md) compares the **same Vicon source represented in two coordinate systems**, using 26 existing A3 participants and five A4 anchors, frozen 24-image source-correct `dup_num==factor` pairing, and A3-fitted transforms tested on held-out A3/A4. It distinguishes proper-rotation versus orientation-reflecting orthogonal conventions (scale near 1/60), and inventories missing **raw physical capture timebase** evidence. These internal coordinate consistency findings are **not independent camera-to-Vicon registration, MediaPipe XYZ accuracy, MPJPE(mm), or anatomical joint-centre validation**.
