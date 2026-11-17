@@ -102,7 +102,8 @@ def _fake_rows():
                     "original_WCS_timestamp_keys": [],
                     "original_camera_timestamp_keys": [],
                 },
-                "A4": {"original_WCS_timestamp_keys": []} if p in roots else None,
+                "A4": {"original_WCS_timestamp_keys": [],
+                       "original_camera_timestamp_keys": []} if p in roots else None,
                 "comparison": {
                     "proper_rotation": worse,
                     "axis_reversal_allowed": better,
