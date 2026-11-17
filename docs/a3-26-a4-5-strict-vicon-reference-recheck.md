@@ -44,3 +44,27 @@ A bounded **one-report preflight** uses the same command with `--max-new-reports
 - [ ] Physical capture timestamps, Vicon/model anatomical landmark equivalence, absolute world-camera coordinate registration and real-world MPJPE(mm) all remain **unverified**, irrespective of statistical changes.
 
 This protocol uses an existing published dataset, no new participant filming or clinical research approval; future **new** filming and/or commercial reuse require separate ethics/license review. See [DATA_POLICY.md](../DATA_POLICY.md) and the [root-relative 3D shape pilot](a3-a4-rootrelative-3d-holdout.md).
+
+## 2026-11-17 — completed Windows-local source-valid re-evaluation
+
+**Execution:** On the authorized research PC, all **124 / 124 model reports** (A3 26 subjects × C1/C6 × Lite/Full = 104; A4 five anchors × C1/C6 × Lite/Full = 20) were successfully re-evaluated on the **same fixed original 1,488 unique RGB JPEG sample instances**, making **2,976 model-image inferences** and **2,949 pose detections**. Each saved original-reference side MAE, valid-side count and pose-detection count was reproduced before the strict report was accepted. Frozen Lite and Full model SHA256 values matched the original A3 26-person protocol; original reports and RGB/Vicon ZIPs were not overwritten.
+
+**Source association audit:** **16/1,248 A3 + 5/240 A4 = 21/1,488** unique JPEG↔Vicon-record pairings had originally selected a dropped-frame placeholder coordinate index. Two model variants were run on the same images, so this is **42/2,976 model–reference pairings** at potentially changed labels. All **1,488 JPEG filenames and their order remain unchanged**. The strict source-valid correspondence requires a unique `dup_num == factor` record; no image or participant substitution occurred.
+
+**Sensitivity results:** The study recomputed 4 disjoint/overlapping A3 D2 cohort definitions (historical 5 anchors, disjoint 10, remaining 11, all 26) and the 5-anchor A4 D2 results across C1/C6, Lite/Full and separate 2D projection/3D WCS spaces: **40 five-calibration-group Spearman rho comparisons**. The original four A3 cohort correlation sets (**32** rhos) reproduced the historical source analysis exactly. A separate, Windows-local independent verification using SciPy's `spearmanr` recalculated **all 80 original and source-valid rhos (80/80 match)** and the group-weighted participant MAE summaries.
+
+**39 of 40 rho values were unchanged.** The sole change was **A3 anchor-five, C6 rear, MediaPipe Full, 2D projected Vicon reference: rho −0.30 → −0.40**. The maximum absolute movement of the *participant-MAE median* across the 40 summary rows was **0.2215°** (not a maximum individual-frame error).
+
+| C6 rear, 3D WCS knee included-angle MAE vs G65 calibration residual | Original rho | Source-valid rho |
+|---|---:|---:|
+| A3 anchor 5 Lite / Full | +0.90 / +0.70 | +0.90 / +0.70 |
+| A3 disjoint 10 Lite / Full | +0.60 / +0.50 | +0.60 / +0.50 |
+| A3 remaining 11 Lite / Full | +0.50 / −0.60 | +0.50 / −0.60 |
+| A3 all 26 Lite / Full | +0.90 / +0.50 | +0.90 / +0.50 |
+| A4 anchor 5 Lite / Full | +0.70 / +0.90 | +0.70 / +0.90 |
+
+The **Full-model rho sign inversion in the remaining 11-person A3 cohort persists** and is **not explained by the 21 corrected original coordinate indices**. The same five calibration sessions are still shared; this re-evaluation added **zero** new independent calibration groups. These findings support robustness **to this specific source-index repair only**, not a causal explanation, external reproducibility, clinical validity, 3D MPJPE(mm) or validated physical camera–Vicon exposure-time synchronization.
+
+**Reproducible private outputs** (all remain in the existing Windows research analysis folder, no source/subject records in public Git): `strict_source_pairing_20261117/` contains 124 local per-subject/view/model aggregate report JSONs plus `strict_A3_26_A4_5_D2_aggregate_20261117.json` and `strict_A3_26_A4_5_D2_independent_scipy_readback_20261117.json`. Local synthetic suite was **85/85 passing** on code SHA `dcf7122da8dca0d71db23acc07548570da0aa293`, and the PR CI ran Python 3.10/3.12/3.13 successfully on that SHA; the final documentation-head CI and main-commit checks must be read separately.
+
+**Interpretation:** The corrected index mapping removes a known labeling artefact while keeping pixel/model inputs fixed. It does **not** prove exact physical capture synchronization, or resolve differences between MediaPipe landmarks and Vicon joint centres. All numerical results remain exploratory, noncausal and unsuitable for clinical accept/reject thresholds.
