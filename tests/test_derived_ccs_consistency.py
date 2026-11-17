@@ -126,7 +126,7 @@ def test_grouped_26_subjects_do_not_inflate_independent_calibration_n():
     assert d["new_independent_calibration_groups"] == 0
     assert d["physical_mpjpe_mm_validated"] is False
     assert d["no_physical_camera_Vicon_common_clock_evidence"] is True
-    assert "rows" not in d and "subject" not in str(d)
+    assert "rows" not in d and "subject" not in d and "subject_map" not in d
 
 
 def test_incomplete_and_repeated_participants_fail_before_aggregation():
