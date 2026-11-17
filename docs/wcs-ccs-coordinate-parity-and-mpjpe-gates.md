@@ -53,3 +53,11 @@ The full 26-person A3 plus five-anchor A4 readback reports:
 - There is no claim of physical-camera/Vicon independent registration, actual exposure synchronization, MPJPE(mm), clinically equivalent joints, new participants, p-values, or product readiness.
 
 The original data license and research governance remain those recorded in [DATA_POLICY.md](../DATA_POLICY.md). Publish the code, synthetic tests and approved **cross-group** findings only; keep all source files, participant summaries, exact WCS/CCS transform matrices, model weights and image/video artifacts on approved private research storage.
+
+## Local verification receipt (2026-11-17)
+
+- The code-only synthetic suite completed **90/90 passing** for commit `378952123e8ee485cc22abb713fa50bae754b94d` (before this documentation update). Verify CI for the final PR head separately.
+- Full real-data computation checked **52 A3** camera-view recordings from 26 people and **10 A4** recordings from five anchors, using the original dataset and 24 strict JPEG references per recording; no model inference or extra independent calibration session.
+- An independent readback recalculated **all four five-calibration-group descriptive cells** from 52 private detailed rows and matched the initial report, and used a separate SciPy `orthogonal_procrustes` fit to reproduce two independent held-out reflected-coordinate residual controls. Both had matrix determinant approximately −1. **These are source representation consistency checks, not independent clinical measurements.**
+- In the original local WCS and camera JSON records for the audited recordings, direct hardware exposure timestamp fields were absent for **52/52 A3 view records and 10/10 A4 view records**, in both WCS and derived-camera schema inventories. **This does not rule out separate acquisition logs held by the original authors.**
+- Exact private local output basenames: `WCS_CCS_D2_26plus5_derived_private_20261117.json`, `WCS_CCS_D2_26plus5_derived_aggregate_20261117.json`, and **additive non-overwriting readback** `WCS_CCS_D2_26plus5_derived_aggregate_v2_20261117.json` plus `WCS_CCS_D2_26plus5_derived_readback_v2_20261117.json`, all under the authorized Windows research analysis directory. The public repo contains no per-person rows, raw coordinates or fitted transforms.
