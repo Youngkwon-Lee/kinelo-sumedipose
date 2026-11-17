@@ -117,7 +117,7 @@ def test_complete_124_reports_40_associations_and_no_inflated_n():
     assert output["n_group_descriptive_associations"] == 40
     assert output["independent_calibration_groups"] == 5
     assert output["new_independent_calibration_groups"] == 0
-    assert output["total_old_wrong_pairings"] == 62
+    assert output["total_old_wrong_pairings"] == 31  # synthetic one bad reference per C1 JPG, one model only
     assert all(x["delta_rho"] == 0 for x in output["comparison"])
     assert output["absolute_3d_MPJPE_mm_validated"] is False
 
