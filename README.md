@@ -290,3 +290,7 @@ The existing SUMediPose A3 and A4 results share five daily camera calibration se
 ## A4/D2 3D Vicon angle-bias and record-index follow-up
 
 The existing [A3/D2 frame-index and signed angle-bias pilot](docs/a3-d2-frame-joint-pilot.md) can also be run for deadlift via `python -m sumedipose.frame_joint_pilot --action A4`. See the [A4/D2 3D Vicon comparison protocol](docs/a4-d2-vicon-3d-bias-pilot.md) for the source-only coordinate definitions, frozen 24-frame comparison, private-output boundary and critical limitation: **a record-index shift is not a verified exposure-time alignment, and the model landmarks are not independent Vicon joint centres**.
+
+## Experimental root-relative 3D position geometry (not MPJPE)
+
+A strict `dup_num == factor` RGB-to-WCS mapping audit identified eight dropped-frame placeholder reference pairs in the historical five-anchor A3/A4 sampling. The [held-out A3→A4 root-relative six-joint diagnostic](docs/a3-a4-rootrelative-3d-holdout.md) fixes source frame selection, fits one similarity transform on A3 training frames, and checks frozen 3D **shape** discrepancy on held-out A3/A4. It does **not** validate absolute XYZ positions, real-world MPJPE, anatomical joint-centre equivalence, or physical Vicon-video timing; filled reports stay on the private research drive.
