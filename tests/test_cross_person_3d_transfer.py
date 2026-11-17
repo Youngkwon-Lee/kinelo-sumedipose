@@ -5,7 +5,7 @@ import pytest
 from sumedipose.position_holdout import ANCHORS, CAMERAS, VARIANTS, root_relative
 from sumedipose.cross_person_3d_transfer import (
     TOTAL_SUBJECTS, PARITIES, validate_groups, training_only_fits,
-    evaluate_excluded_group, summarize, _only_a3_last12,
+    evaluate_excluded_group, summarize, _only_a3_last12, write_private_json,
 )
 
 
@@ -173,3 +173,23 @@ def test_other_person_fitted_baseline_not_required_for_full26():
     z=summarize(rows,grp)
     assert all(not any(k.startswith("personal_A3_fitted_anchor_median") for k in r)
                for r in z["cells"])
+
+
+
+def test_private_json_is_valid_strict_json_with_real_final_newline(tmp_path):
+    import json
+    dest = tmp_path / "private.json"
+    write_private_json(dest, {"status": "synthetic", "score": 1.23})
+    actual = dest.read_bytes()
+    assert actual.endswith(b"\n")
+    assert not actual.endswith(b"\\n")
+    assert json.loads(actual.decode("utf-8"))["score"] == 1.23
+    with pytest.raises(FileExistsError):
+        write_private_json(dest, {"status": "do_not_overwrite"})
+
+
+def test_json_export_rejects_nan_and_preserves_absent_file(tmp_path):
+    dest = tmp_path / "invalid.json"
+    with pytest.raises(ValueError):
+        write_private_json(dest, {"bad_value": float("nan")})
+    assert not dest.exists()
