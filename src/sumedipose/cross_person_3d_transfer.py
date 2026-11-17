@@ -246,6 +246,14 @@ def summarize(rows, group_to_members, within_person_reference=None):
     }
 
 
+
+def write_private_json(path: Path, payload: dict):
+    """Write one strict JSON file once, without non-standard NaN or trailing text."""
+    encoded = json.dumps(payload, ensure_ascii=False, indent=2, allow_nan=False)
+    with path.open("x", encoding="utf-8") as stream:
+        stream.write(encoded + "\n")
+
+
 def run_study(root, model_dir, analysis_dir, private_output, aggregate_output):
     """Read originals in place; never save model/Vicon per-frame coordinates."""
     repo = Path(__file__).resolve().parents[2]
@@ -335,12 +343,10 @@ def run_study(root, model_dir, analysis_dir, private_output, aggregate_output):
         },
         "private_local_only":True,
         "no_per_frame_coordinates_or_RGB_saved":True,
-        "not_absolute_MJPPE":True
+        "not_absolute_MPJPE":True
     }
     for dest,payload in ((private_output,private),(aggregate_output,report)):
-        with dest.open("x",encoding="utf-8") as f:
-            json.dump(payload,f,ensure_ascii=False,indent=2)
-            f.write("\\n")
+        write_private_json(dest, payload)
     print(json.dumps({k:report[k] for k in (
         "status","A3_subjects_evaluated","A4_anchor_subjects_evaluated",
         "heldout_model_participant_action_evaluations","model_image_inferences",
