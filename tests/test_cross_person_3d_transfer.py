@@ -157,7 +157,7 @@ def test_missing_fold_and_parity_test_leakage_rejected():
         summarize(rows[:-1],grp)
     rows,grp=synthetic_folds()
     rows[0]["parity_chosen_from_train_only"]="proper"
-    with pytest.raises(ValueError,match="training data"):
+    with pytest.raises(ValueError,match="train data"):
         summarize(rows,grp)
 
 
