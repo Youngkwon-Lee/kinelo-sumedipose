@@ -310,3 +310,13 @@ The source-derived WCS↔camera XYZ parity [audit](docs/wcs-ccs-coordinate-parit
 ## Cross-person 3D alignment transfer: leave one calibration group out
 
 A [five-group leave-one-calibration-group-out A3→A4 3D transfer study](docs/cross-person-a3-a4-3d-alignment-transfer.md) tests whether a MediaPipe-to-Vicon hip-root-centred numerical scale/orientation fit learned from **other people at four separate existing calibration sessions** transfers to withheld participants from the fifth session. It fits both proper and reflected transforms using only other-group A3 first-12 frames and chooses parity **on training scores only**. It evaluates the held-out group's 26 A3 people (last-12 frames per recording) and A4 anchor recordings, with personal-A3-fitted comparators separately labelled. These are supervised, Vicon-root-assisted 3D **shape** metrics, **not** physically registered MPJPE(mm), independently timestamp-synchronized absolute positions, clinical accuracy, or external dataset validation. Original data and per-person metrics remain strictly local.
+
+## Optional web app: squat report (`web/`, `api/`)
+
+`web/` is a small browser app that records or uploads **one's own** squat video, measures hip–knee–ankle angles per frame with MediaPipe Pose Landmarker, and shows rep count, depth, left/right difference, tempo and trunk lean. An optional paid layer (access code → `api/report.js`) adds a 4-week routine written around those numbers. It is a separate artefact from the research pipeline above and does not use, produce or publish any SUMediPose data.
+
+- The angle function is a port of `src/sumedipose/geometry.py:joint_angle` and the landmark indices are the ones `src/sumedipose/benchmark.py` maps; `tests/test_web_metrics_parity.py` checks both against the Python package.
+- The video stays in the browser. Only the numeric summary is sent, and only after a valid access code.
+- The app repeats the repository's own limits: single-camera estimates, no Vicon registration, no exposure-time synchronisation, no clinical validity. The fixed disclaimer says the report is not diagnosis, examination or treatment.
+
+Design, API contract, hardening and cost/margin: [docs/squat-report.md](docs/squat-report.md). Browser tests run through `node --test tests/web/*.test.cjs` (invoked by the Python suite, so no CI workflow change is needed).
