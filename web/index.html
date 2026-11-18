@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="color-scheme" content="light" />
+<title>스쿼트 리포트 — 카메라로 3회 스쿼트 분석</title>
+<meta name="description" content="스쿼트 영상을 찍으면 무릎 각도·좌우 차이·템포를 정리하고, 원하면 4주 루틴 리포트를 받을 수 있습니다. 영상은 기기 밖으로 나가지 않습니다." />
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+<main class="sq-app">
+
+  <!-- 1. 시작 -->
+  <section class="sq-screen" id="screen-start">
+    <header class="sq-head">
+      <p class="sq-kicker">SQUAT REPORT</p>
+      <h1>스쿼트 <em>3회</em>, 숫자로 확인하세요</h1>
+      <p class="sq-lede">영상에서 무릎 각도·좌우 차이·템포를 계산합니다. 영상과 좌표는 이 기기 안에서만 처리되고 어디에도 전송되지 않습니다.</p>
+    </header>
+
+    <ol class="sq-steps">
+      <li><span>1</span><div><strong>전신이 다 보이게</strong>휴대폰을 세워 두고 3~4걸음 떨어져 서세요.</div></li>
+      <li><span>2</span><div><strong>45도 사선에서</strong>정면보다 45도 옆에서 찍으면 무릎 각도가 덜 가려집니다.</div></li>
+      <li><span>3</span><div><strong>편하게 3회</strong>평소 속도로 3번 앉았다 일어나면 끝입니다.</div></li>
+    </ol>
+
+    <div class="sq-view">
+      <span>촬영 각도</span>
+      <div role="group" aria-label="촬영 각도">
+        <button type="button" class="sq-chip-btn is-on" data-view="angle45">45도 사선</button>
+        <button type="button" class="sq-chip-btn" data-view="front">정면</button>
+        <button type="button" class="sq-chip-btn" data-view="side">측면</button>
+      </div>
+    </div>
+
+    <div class="sq-actions">
+      <button class="sq-primary" type="button" id="btn-camera">카메라로 측정</button>
+      <label class="sq-secondary">
+        영상 파일 올리기
+        <input type="file" id="file-input" accept="video/*" hidden />
+      </label>
+    </div>
+    <p class="sq-status" id="start-status" role="status"></p>
+
+    <details class="sq-fine">
+      <summary>측정이 어떤 값인지 정확히 알기</summary>
+      <p>무릎 각도는 골반·무릎·발목 세 관절점이 이루는 각도입니다(180도 = 다리를 폄). 2D 값은 화면에 투영된 각도이고, 3D 값은 포즈 모델이 추정한 골반 중심 좌표에서 계산합니다.</p>
+      <p>광학 모션캡처로 검증된 측정이 아닙니다. 카메라 높이·각도·거리·옷·가림에 따라 값이 달라지므로, 절대값보다 같은 조건에서 다시 잰 변화를 보는 데 쓰세요.</p>
+      <p>이 리포트는 운동 참고 자료이며 의료 진단·검사·치료가 아닙니다.</p>
+    </details>
+
+    <p class="sq-credit">기하 계산: <a href="https://github.com/Youngkwon-Lee/kinelo-sumedipose" rel="noreferrer">Kinelo × SUMediPose</a> 오픈소스(MIT)의 관절각 정의</p>
+  </section>
+
+  <!-- 2. 분석 -->
+  <section class="sq-screen" id="screen-analyze" hidden>
+    <div class="sq-video-wrap">
+      <video id="video" playsinline muted></video>
+      <canvas id="overlay"></canvas>
+      <div class="sq-countdown" id="countdown" hidden></div>
+    </div>
+    <div class="sq-progress"><div id="progress-bar"></div></div>
+    <p class="sq-status" id="analyze-status" role="status">준비 중…</p>
+    <button class="sq-link" type="button" id="btn-cancel">그만두기</button>
+  </section>
+
+  <!-- 3. 결과(무료) -->
+  <section class="sq-screen" id="screen-result" hidden>
+    <header class="sq-head">
+      <p class="sq-kicker">측정 결과</p>
+      <h1>이번 스쿼트 요약</h1>
+      <p class="sq-meta" id="result-meta"></p>
+    </header>
+    <div class="sq-chips" id="result-chips"></div>
+    <ul class="sq-flags" id="result-flags"></ul>
+    <div id="teaser-slot"></div>
+    <div id="quality-block" hidden></div>
+    <div class="sq-actions">
+      <button class="sq-secondary" type="button" id="btn-retry">다시 찍기</button>
+    </div>
+    <p class="sq-credit">영상은 저장되지 않습니다. 브라우저를 닫으면 측정 데이터도 사라집니다.</p>
+  </section>
+
+  <!-- 4. 이용 코드 -->
+  <section class="sq-screen sq-panel" id="screen-access" hidden>
+    <button class="sq-close" type="button" id="btn-close-access" aria-label="닫기">×</button>
+    <h2>리포트 받기</h2>
+    <p class="sq-lede">구매 후 받은 안내문의 이용 코드를 넣으면 이 측정으로 리포트를 만듭니다.</p>
+    <p class="sq-buy">
+      <a class="sq-primary" id="buy-link" href="#" target="_blank" rel="noreferrer">이용권 구매 · <span id="buy-price">4,900원</span></a>
+    </p>
+    <div class="sq-goal">
+      <span>목표</span>
+      <div role="group" aria-label="운동 목표">
+        <button type="button" class="sq-chip-btn is-on" data-goal="strength">근력</button>
+        <button type="button" class="sq-chip-btn" data-goal="mobility">가동성</button>
+        <button type="button" class="sq-chip-btn" data-goal="consistency">꾸준함</button>
+      </div>
+    </div>
+    <form id="code-form" autocomplete="off">
+      <label for="code-input">이용 코드</label>
+      <input id="code-input" name="code" inputmode="text" autocapitalize="characters" spellcheck="false" placeholder="SQ-0000-0000" />
+      <button class="sq-primary" type="submit" id="btn-submit">리포트 만들기</button>
+    </form>
+    <p class="sq-status" id="access-status" role="status"></p>
+    <p class="sq-micro">코드는 이 브라우저에 30일 저장됩니다. 같은 측정은 다시 호출하지 않습니다.</p>
+  </section>
+
+  <!-- 5. 리포트 -->
+  <section class="sq-screen sq-screen-report" id="screen-report" hidden>
+    <div class="sq-report-toolbar">
+      <button class="sq-secondary" type="button" id="btn-print">PDF로 저장</button>
+      <button class="sq-link" type="button" id="btn-new">새로 측정</button>
+    </div>
+    <div id="report-slot"></div>
+  </section>
+
+</main>
+<script src="config.js"></script>
+<script src="squat-metrics.js"></script>
+<script src="exercise-catalog.js"></script>
+<script src="report-view.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
