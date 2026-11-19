@@ -104,12 +104,16 @@ def test_source_intrinsics_are_predeclared_and_not_picked_by_gt(tmp_path):
             "subject","main","main_link","path"])
         w.writeheader()
         w.writerow({"subject":"S1","main":"1","main_link":"False",
-                    "path":"calibration/external/matrix/selected_G12_abc.npz"})
+                    "path":"calibration/external/matrix/SS1_G12_selected.npz"})
         w.writerow({"subject":"S1","main":"6","main_link":"True",
-                    "path":"calibration/external/matrix/extra_G65_abc.npz"})
+                    "path":"calibration/external/matrix/SS1_G65_extra.npz"})
+        # Source CSV can have a row for this group pointing at a different group.
+        # Never select it merely because the main camera / pair matches.
+        w.writerow({"subject":"S1","main":"6","main_link":"True",
+                    "path":"calibration/external/matrix/SS23_G65_cross_group.npz"})
     # Create exact named files, no dynamic GT-dependent selection.
-    (matrix/"selected.npz").rename(matrix/"selected_G12_abc.npz")
-    (matrix/"extra.npz").rename(matrix/"extra_G65_abc.npz")
+    (matrix/"selected.npz").rename(matrix/"SS1_G12_selected.npz")
+    (matrix/"extra.npz").rename(matrix/"SS1_G65_extra.npz")
     K1,dist1=calibration_intrinsics(root,"S1","C1")
     K6,dist6=calibration_intrinsics(root,"S1","C6")
     assert np.allclose(K1,_K()) and np.allclose(K6,_K())
