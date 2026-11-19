@@ -10,10 +10,10 @@ This experiment attempts to infer an entire six-joint camera-frame skeleton **wi
 
 ## Predeclared input and model
 
-- 26 available A3 D2 participants and five A4 D2 anchors in the **five original calibration groups** (not 26 independent camera setups), views C1 front/C6 rear, frozen MediaPipe Lite/Full task hashes; 24 original source-valid RGB images per recording and original \`dup_num==factor\` correspondence.
-- Source camera **intrinsics (K) and distortion** from official \`external_calibration.csv\` referenced matrices. C1 uses the **main C1 intrinsic of G12**; C6 uses the **main C6 intrinsic of G65**. CSV fixes which file to use; do not choose matrices or pose hypotheses by looking at held-out Vicon errors. The held-out camera's **pre-existing calibration K is provided**: this experiment does **not** generalize to an unknown uncalibrated camera.
-- For each C1/C6 and Lite/Full, and for each of five leave-one-calibration-group-out folds, the **only training Vicon information** is the **hip-to-knee 3D segment length** in derived camera XYZ in the A3 **first 12** source-correct frames of one anchor person from each of the **four other** calibration groups. Fit a single numerical scale \`camera XYZ source units per MediaPipe metre\` as the **median of four equal-group medians**. The entire held-out group, all held-out A3 last-12 frames, and all A4 frames are excluded from this scale.
-- On each held-out test frame, obtain MediaPipe's **image 2D landmarks (pixels)** and **pose_world_landmarks 3D** from the same RGB image. Pass these, the fixed **training scale**, and this camera's frozen **K/distortion**, to \`cv2.solvePnP\` EPNP. Solve per-frame image-only rotation + translation; explicitly require six finite landmarks, positive predicted joint depth and no numerical errors. **No test-time Vicon GT is passed into \`predict_camera_points\`.**
+- 26 available A3 D2 participants and five A4 D2 anchors in the **five original calibration groups** (not 26 independent camera setups), views C1 front/C6 rear, frozen MediaPipe Lite/Full task hashes; 24 original source-valid RGB images per recording and original `dup_num==factor` correspondence.
+- Source camera **intrinsics (K) and distortion** from official `external_calibration.csv` referenced matrices. C1 uses the **main C1 intrinsic of G12**; C6 uses the **main C6 intrinsic of G65**. CSV fixes which file to use; do not choose matrices or pose hypotheses by looking at held-out Vicon errors. The held-out camera's **pre-existing calibration K is provided**: this experiment does **not** generalize to an unknown uncalibrated camera.
+- For each C1/C6 and Lite/Full, and for each of five leave-one-calibration-group-out folds, the **only training Vicon information** is the **hip-to-knee 3D segment length** in derived camera XYZ in the A3 **first 12** source-correct frames of one anchor person from each of the **four other** calibration groups. Fit a single numerical scale `camera XYZ source units per MediaPipe metre` as the **median of four equal-group medians**. The entire held-out group, all held-out A3 last-12 frames, and all A4 frames are excluded from this scale.
+- On each held-out test frame, obtain MediaPipe's **image 2D landmarks (pixels)** and **pose_world_landmarks 3D** from the same RGB image. Pass these, the fixed **training scale**, and this camera's frozen **K/distortion**, to `cv2.solvePnP` EPNP. Solve per-frame image-only rotation + translation; explicitly require six finite landmarks, positive predicted joint depth and no numerical errors. **No test-time Vicon GT is passed into `predict_camera_points`.**
 - Only *after* successful PnP, compare predicted camera-frame hip-midpoint/root and six-joint 3D positions to SUMediPose's **Vicon-derived camera XYZ**. Express Euclidean discrepancies as **% of test Vicon femur segment length**, not an independently verified distance in millimetres. The reference segment length is used only to **normalize the metric** after prediction. Count all attempted frames, valid six-joint frames, positive-depth PnP results and rejected PnP cases; do not hide bad outcomes by filtering on reference error or model self-reprojection.
 - Separately audit source Vicon-derived camera XYZ projected with the selected K/distortion against the dataset's **Vicon-derived 2D projections**. This is an **internal calibration evidence check only**, not an independent RGB/Vicon registration test. Flag per-group p90 residuals exceeding a **predeclared 20 px** evidence-warning threshold without manipulating or excluding the test scores.
 - Report group-first equal-weight **five calibration-group medians**, separately for A3's held-out last-12 frames in 26 subjects and A4's 24 frames in five anchors, for both model variants and both views. Each original calibration group is held out once per view/model; **new independent calibration groups = 0**.
@@ -38,16 +38,16 @@ A read-only audit of the released `external_calibration.csv` found a **conflicti
 
 Do not modify original RGB/WCS/CCS ZIPs, task files or a potentially dirty user worktree. Use a **dedicated clean code checkout**. All per-group/subject summaries remain on the approved research PC, outside GitHub, Second Brain, Drive and Notion. Only reviewed nonidentifying aggregate interpretations may leave.
 
-\`\`\`powershell
+```powershell
 $repo = (Get-Location).Path
 $base = "D:\Research\PublicDatasets\SUMediPose"
 $env:PYTHONPATH = Join-Path $repo "src"
-python -m sumedipose.camera_pnp_no_test_vicon \`
-  --root "$base\raw" --models-dir "$base\models" \`
-  --analysis-dir "$base\analysis" \`
-  --private-output "$base\analysis\camera_PnP_LOCO_no_test_Vicon_private_20261119.json" \`
+python -m sumedipose.camera_pnp_no_test_vicon `
+  --root "$base\raw" --models-dir "$base\models" `
+  --analysis-dir "$base\analysis" `
+  --private-output "$base\analysis\camera_PnP_LOCO_no_test_Vicon_private_20261119.json" `
   --aggregate-output "$base\analysis\camera_PnP_LOCO_no_test_Vicon_aggregate_20261119.json"
-\`\`\`
+```
 
 The report uses **strict JSON**, refuses to overwrite existing files, and will fail closed if the frozen model hashes, source image count, calibration membership, selected source K or minimum viable six-joint data cannot be verified. The code includes no files exposing participant RGB, Vicon XYZ trajectories or model keypoints.
 
@@ -63,9 +63,9 @@ The report uses **strict JSON**, refuses to overwrite existing files, and will f
 
 ## Actual Windows research experiment — 2026-11-19
 
-**Completed** with code SHA \`17ed325c10c08c5e99a6637c19ad590fcda8d9e3\` (before the documentation-only commits), **2,976 attempted RGB model inferences, 2,949 detected poses**, 20 predefined camera×model×heldout-calibration-group folds and five original calibration groups (zero newly acquired). All eligible test frames with six visible valid joints returned a PnP camera-frame estimate with positive depths. The attempted and valid frame totals differ because the original A3 first-12 frames of anchor participants are training only and other original RGB samples lack all six visible joints.
+**Completed** with code SHA `17ed325c10c08c5e99a6637c19ad590fcda8d9e3` (before the documentation-only commits), **2,976 attempted RGB model inferences, 2,949 detected poses**, 20 predefined camera×model×heldout-calibration-group folds and five original calibration groups (zero newly acquired). All eligible test frames with six visible valid joints returned a PnP camera-frame estimate with positive depths. The attempted and valid frame totals differ because the original A3 first-12 frames of anchor participants are training only and other original RGB samples lack all six visible joints.
 
-**Test-time prediction code did not read the held-out person's Vicon hip position or bone length.** Training scale was fitted exclusively using A3 first-12 reference segment lengths from four **other** calibration anchors; the held-out camera's **source intrinsic matrix and distortion** were available. The Vicon-derived \`internal_data/xyz\` for the held-out subject was used **only after** predictions were made, for error scoring.
+**Test-time prediction code did not read the held-out person's Vicon hip position or bone length.** Training scale was fitted exclusively using A3 first-12 reference segment lengths from four **other** calibration anchors; the held-out camera's **source intrinsic matrix and distortion** were available. The Vicon-derived `internal_data/xyz` for the held-out subject was used **only after** predictions were made, for error scoring.
 
 **Six-joint camera-frame location discrepancy, percentage of Vicon femur segment length**, median of five equal-weight calibration-group means:
 
@@ -85,7 +85,7 @@ The report uses **strict JSON**, refuses to overwrite existing files, and will f
 | C6 rear | Lite | 81.50% | 111.95% |
 | C6 rear | Full | 68.84% | 73.03% |
 
-**Critical source integrity limitation:** the held-out source camera XYZ projection p90 residual exceeded the predeclared 20 px caution threshold in at least one source calibration group for **every C6 result**; largest group p90 values were **about 81–83 px**. All C1 results avoided this threshold (maximum group p90 **about 6–8 px**). Furthermore, the source \`S17/C6\` CSV includes a cross-group **S23** calibration path; the code selected the filename consistent with source group S17 from the same CSV without looking at test reference metrics. The source-author intention remains **unverified**, and the C6 metric should not be accepted as camera-independent measurement accuracy.
+**Critical source integrity limitation:** the held-out source camera XYZ projection p90 residual exceeded the predeclared 20 px caution threshold in at least one source calibration group for **every C6 result**; largest group p90 values were **about 81–83 px**. All C1 results avoided this threshold (maximum group p90 **about 6–8 px**). Furthermore, the source `S17/C6` CSV includes a cross-group **S23** calibration path; the code selected the filename consistent with source group S17 from the same CSV without looking at test reference metrics. The source-author intention remains **unverified**, and the C6 metric should not be accepted as camera-independent measurement accuracy.
 
 Although the model-only **2D self-reprojection residual** was often around 8–16 px in the five-group summaries, the camera-root and six-joint 3D position discrepancies were very large. Self-reprojection consistency cannot validate actual 3D joint position or guarantee correct pixel-to-metre calibration.
 
@@ -93,11 +93,11 @@ Although the model-only **2D self-reprojection residual** was often around 8–1
 
 The two strict JSON local outputs were reloaded, all **8/8 cells** separately recalculated from **20 private heldout-fold summaries** (including each fold's per-person evaluation summaries), model task SHA256 compared with frozen A3 protocol, image/detection counts matched, and all model-PnP test predictions confirmed not to receive Vicon GT. The local readback was saved separately without overwriting original images, JSON or previous research results.
 
-Private local-only file basenames in the authorized Windows \`D:\Research\PublicDatasets\SUMediPose\analysis\` directory:
+Private local-only file basenames in the authorized Windows `D:\Research\PublicDatasets\SUMediPose\analysis` directory:
 
-- \`camera_PnP_LOCO_no_test_Vicon_private_20261119.json\` — per-fold/subject diagnostic summary, not public.
-- \`camera_PnP_LOCO_no_test_Vicon_aggregate_20261119.json\` — nonidentifying group summary.
-- \`camera_PnP_LOCO_no_test_Vicon_readback_20261119.json\` — independently checked aggregate and source-quality flags.
+- `camera_PnP_LOCO_no_test_Vicon_private_20261119.json` — per-fold/subject diagnostic summary, not public.
+- `camera_PnP_LOCO_no_test_Vicon_aggregate_20261119.json` — nonidentifying group summary.
+- `camera_PnP_LOCO_no_test_Vicon_readback_20261119.json` — independently checked aggregate and source-quality flags.
 
 The code-only Windows synthetic test suite completed **141 passed** at initial and revised algorithm SHAs. The final PR-head and post-merge GitHub Python CI statuses are recorded separately; do not apply earlier green CI to an untested later code SHA.
 
