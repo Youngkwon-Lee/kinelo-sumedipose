@@ -29,6 +29,11 @@ Expected model-image inferences: **2,496 A3 + 480 A4 = 2,976**. New code does **
 5. The projected 2D image points and 3D world landmarks are from the **same pose network**. PnP self-reprojection can be small while real joint positions differ from Vicon, or vice versa. The source-projection check uses two representations derived from Vicon, **not independent hardware proof**.
 6. This is a feasibility study of camera-root recovery **within one public dataset**; the model's potential training-data overlap and external generalisation are unknown. No clinical thresholds, therapeutic decisions, causal effects, external-study results or deployment authorisation follow from this experiment.
 
+
+### Source calibration metadata inconsistency (pre-inference discovery)
+
+A read-only audit of the released `external_calibration.csv` found a **conflicting source filename for S17/C6/G65**: one row associated with S17 camera 6 points at a **S23** calibration matrix filename, while a second S17/G65 row (camera 5, with main camera 6) points to an **S17** matrix filename. This is a **source-provenance ambiguity**, not permission to use test Vicon to choose the lower-error matrix. The frozen algorithm requires the candidate's source-calibration filename to identify **the same original calibration group**, with the expected main camera and camera-pair identifier. It refuses multiple group-consistent candidates; it does **not** select intrinsics by held-out 3D ground-truth fit. Results for C6/S17 remain conditional on this source-metadata choice until the source authors resolve the discrepancy; the finding must be reported even if the numeric PnP test completes.
+
 ## Windows local-only execution
 
 Do not modify original RGB/WCS/CCS ZIPs, task files or a potentially dirty user worktree. Use a **dedicated clean code checkout**. All per-group/subject summaries remain on the approved research PC, outside GitHub, Second Brain, Drive and Notion. Only reviewed nonidentifying aggregate interpretations may leave.
