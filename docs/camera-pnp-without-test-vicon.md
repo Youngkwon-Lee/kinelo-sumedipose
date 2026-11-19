@@ -60,3 +60,45 @@ The report uses **strict JSON**, refuses to overwrite existing files, and will f
 - [ ] Independently recompute group-level median root and six-joint errors, source projection K diagnostics, PnP availability, fail rates and per-cell frame counts from private fold summaries; do not release per-participant results.
 - [ ] Clearly label any C6 source-projection warnings and unknown physical timestamp/anatomical equivalence as unresolved measurement validity, not a valid clinical error.
 - [ ] No nominal board-scale distances presented as independently verified **MPJPE(mm)** or as a medical-device performance claim.
+
+## Actual Windows research experiment — 2026-11-19
+
+**Completed** with code SHA \`17ed325c10c08c5e99a6637c19ad590fcda8d9e3\` (before the documentation-only commits), **2,976 attempted RGB model inferences, 2,949 detected poses**, 20 predefined camera×model×heldout-calibration-group folds and five original calibration groups (zero newly acquired). All eligible test frames with six visible valid joints returned a PnP camera-frame estimate with positive depths. The attempted and valid frame totals differ because the original A3 first-12 frames of anchor participants are training only and other original RGB samples lack all six visible joints.
+
+**Test-time prediction code did not read the held-out person's Vicon hip position or bone length.** Training scale was fitted exclusively using A3 first-12 reference segment lengths from four **other** calibration anchors; the held-out camera's **source intrinsic matrix and distortion** were available. The Vicon-derived \`internal_data/xyz\` for the held-out subject was used **only after** predictions were made, for error scoring.
+
+**Six-joint camera-frame location discrepancy, percentage of Vicon femur segment length**, median of five equal-weight calibration-group means:
+
+| View | Model | A3 held-out (26 subjects) | A4 held-out (five anchors) |
+|---|---|---:|---:|
+| C1 front | Lite | **87.31%** | **86.84%** |
+| C1 front | Full | **81.59%** | **81.13%** |
+| C6 rear | Lite | **82.74%** | **108.46%** |
+| C6 rear | Full | **70.86%** | **82.07%** |
+
+**Predicted pelvis/root camera-location discrepancy** under the same denominator, evaluated after image-only PnP:
+
+| View | Model | A3 held-out | A4 held-out |
+|---|---|---:|---:|
+| C1 front | Lite | 88.05% | 86.96% |
+| C1 front | Full | 75.94% | 84.94% |
+| C6 rear | Lite | 81.50% | 111.95% |
+| C6 rear | Full | 68.84% | 73.03% |
+
+**Critical source integrity limitation:** the held-out source camera XYZ projection p90 residual exceeded the predeclared 20 px caution threshold in at least one source calibration group for **every C6 result**; largest group p90 values were **about 81–83 px**. All C1 results avoided this threshold (maximum group p90 **about 6–8 px**). Furthermore, the source \`S17/C6\` CSV includes a cross-group **S23** calibration path; the code selected the filename consistent with source group S17 from the same CSV without looking at test reference metrics. The source-author intention remains **unverified**, and the C6 metric should not be accepted as camera-independent measurement accuracy.
+
+Although the model-only **2D self-reprojection residual** was often around 8–16 px in the five-group summaries, the camera-root and six-joint 3D position discrepancies were very large. Self-reprojection consistency cannot validate actual 3D joint position or guarantee correct pixel-to-metre calibration.
+
+### Independent readback and provenance
+
+The two strict JSON local outputs were reloaded, all **8/8 cells** separately recalculated from **20 private heldout-fold summaries** (including each fold's per-person evaluation summaries), model task SHA256 compared with frozen A3 protocol, image/detection counts matched, and all model-PnP test predictions confirmed not to receive Vicon GT. The local readback was saved separately without overwriting original images, JSON or previous research results.
+
+Private local-only file basenames in the authorized Windows \`D:\Research\PublicDatasets\SUMediPose\analysis\` directory:
+
+- \`camera_PnP_LOCO_no_test_Vicon_private_20261119.json\` — per-fold/subject diagnostic summary, not public.
+- \`camera_PnP_LOCO_no_test_Vicon_aggregate_20261119.json\` — nonidentifying group summary.
+- \`camera_PnP_LOCO_no_test_Vicon_readback_20261119.json\` — independently checked aggregate and source-quality flags.
+
+The code-only Windows synthetic test suite completed **141 passed** at initial and revised algorithm SHAs. The final PR-head and post-merge GitHub Python CI statuses are recorded separately; do not apply earlier green CI to an untested later code SHA.
+
+**Interpretation:** Image-only **test-time inference** is computationally feasible, but this source-calibrated PnP approach has **high error** in the original data and should **not** be used for clinical 3D measurement, autonomous movement feedback, or commercial accuracy claims. It has not achieved verified physical camera/Vicon metric alignment, hardware exposure clock matching, anatomical landmark equivalence or independently validated **MPJPE(mm)**. Retain this as a **negative feasibility result** and use it to prioritise independent calibration/landmark measurement before further model comparisons.
