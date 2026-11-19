@@ -45,7 +45,7 @@ def calibration_intrinsics(root: Path, group: str, camera: str):
     """Use the source CSV's preselected main-camera calibration, no GT-based pick.
 
     In G12, camera 1 is stereo main (the CSV row may be for cam=2).
-    In G65, camera 6 is stereo main. Both use mtx_A/dist_A.
+    In G65, camera 6 is stereo main. Both use mtx_A/dist_A.\n    Reject any CSV path whose matrix filename belongs to another group;\n    the released S17/C6 CSV includes a cross-group path for S23.
     """
     if group not in ANCHORS or camera not in PAIR_BY_CAMERA:
         raise ValueError("Unexpected source group or camera")
@@ -57,6 +57,7 @@ def calibration_intrinsics(root: Path, group: str, camera: str):
                   if r["subject"] == group
                   and r["main"] == main_id
                   and f"_{pair}_" in r["path"]
+                  and Path(r["path"]).name.startswith(f"SS{group}_{pair}_")
                   and r["main_link"].lower() in ("true", "false")}
     if len(candidates) != 1:
         raise ValueError("Camera intrinsics cannot be identified uniquely from calibration CSV")
