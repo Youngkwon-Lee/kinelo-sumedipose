@@ -74,7 +74,7 @@ def calibration_intrinsics_with_provenance(root: Path, group: str, camera: str):
         raise ValueError("Ambiguous source camera role has multiple matrix paths")
     rel = next(iter(paths))
     file_name = Path(rel).name
-    match = re.match(r"^SS(\\d+)_G(12|65)_", file_name)
+    match = re.match(r"^SS(\d+)_G(12|65)_", file_name)
     if not match or match.group(2) != pair:
         raise ValueError("Unrecognized source stereo calibration filename provenance")
     selected_group = "S" + match.group(1)
