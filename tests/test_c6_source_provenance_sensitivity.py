@@ -48,6 +48,7 @@ def test_missing_or_ambiguous_source_camera_role_fails_closed(tmp_path):
     root=tmp_path
     folder=root/"calibration"/"external"/"matrix"
     folder.mkdir(parents=True)
+    np.savez(folder/"SS23_G65_only.npz", mtx_A=_camera_K(1500.), dist_A=np.zeros((1,5)))
     path=root/"calibration"/"external_calibration.csv"
     with path.open("w",encoding="utf-8",newline="") as file:
         writer=csv.DictWriter(file,fieldnames=[
