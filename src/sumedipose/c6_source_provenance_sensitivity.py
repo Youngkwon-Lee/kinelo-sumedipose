@@ -239,7 +239,7 @@ def run(root, models_dir, analysis_dir, private_path, aggregate_path):
         new_group[variant]=candidate_results[MAIN_ROLE]
         private.append({
             "camera":CAMERA,"model":variant,
-            "training_scale_frozen_from_2019_reference":True,
+            "baseline_20261119_training_scale_reused":True,
             "training_scale_frozen_from_other_four_groups":True,
             "new_training_data_used":False,
             "csv_role_candidate_metadata":{
