@@ -2,6 +2,10 @@
 
 **Status:** source-private experiment. Implementation and validation of **model-only test-time camera location estimates**; not a clinically validated full-world MPJPE(mm), nor a marker-free universal calibration system.
 
+## 2026-11-20 source calibration provenance correction
+
+**Important correction to this historical run:** the S17/C6 source CSV `cam=6` main-camera row explicitly references a G65 matrix whose filename denotes S23. The older PnP implementation had instead forced the S17-named matrix from the `cam=5` companion row. This was an inappropriate file-name restriction. The [dated source-role sensitivity audit](s17-c6-source-calibration-role-sensitivity.md) retains the original results and reruns **only S17/C6** against the deterministic official `cam=6` row (never selecting by test Vicon performance). The S17 group 3D discrepancy decreases by **1.36–3.58 percentage points** across Lite/Full A3/A4, but the **overall five-group medians do not change**, and physical optical accuracy remains unverified.
+
 ## Why this experiment differs from previous A3/A4 studies
 
 Earlier [cross-person LOCO 3D shape evaluation](cross-person-a3-a4-3d-alignment-transfer.md) used Vicon GT hip centres on **each test frame** to root-centre the reference and AI-predicted skeletons. It measured geometry *after supervised reference centering*; it did **not** estimate the location of the person inside the actual camera's 3D space.

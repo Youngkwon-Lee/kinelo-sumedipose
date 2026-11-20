@@ -6,7 +6,7 @@ import numpy as np
 import pytest
 
 from sumedipose.camera_pnp_no_test_vicon import (
-    calibration_intrinsics, training_group_scale, fixed_scale_excluding_group,
+    calibration_intrinsics, calibration_intrinsics_with_provenance, training_group_scale, fixed_scale_excluding_group,
     predict_camera_points, evaluate_prediction, test_recording as evaluate_recording,
     aggregate_fold_rows,
 )
@@ -101,15 +101,15 @@ def test_source_intrinsics_are_predeclared_and_not_picked_by_gt(tmp_path):
     with (root/"calibration"/"external_calibration.csv").open(
             "w",encoding="utf-8",newline="") as f:
         w=csv.DictWriter(f,fieldnames=[
-            "subject","main","main_link","path"])
+            "subject","main","main_link","cam","path"])
         w.writeheader()
-        w.writerow({"subject":"S1","main":"1","main_link":"False",
+        w.writerow({"subject":"S1","main":"1","main_link":"False","cam":"2",
                     "path":"calibration/external/matrix/SS1_G12_selected.npz"})
-        w.writerow({"subject":"S1","main":"6","main_link":"True",
+        w.writerow({"subject":"S1","main":"6","main_link":"True","cam":"6",
                     "path":"calibration/external/matrix/SS1_G65_extra.npz"})
         # Source CSV can have a row for this group pointing at a different group.
         # Never select it merely because the main camera / pair matches.
-        w.writerow({"subject":"S1","main":"6","main_link":"True",
+        w.writerow({"subject":"S1","main":"6","main_link":"True","cam":"5",
                     "path":"calibration/external/matrix/SS23_G65_cross_group.npz"})
     # Create exact named files, no dynamic GT-dependent selection.
     (matrix/"selected.npz").rename(matrix/"SS1_G12_selected.npz")
@@ -173,3 +173,52 @@ def test_five_group_equal_weighting_and_missing_folds_rejected():
                for z in out["cells"] if z["camera"]=="C6")
     with pytest.raises(ValueError):
         aggregate_fold_rows(rows[:-1])
+
+
+def test_source_main_camera_csv_row_takes_precedence_over_filename_group(tmp_path):
+    """S17/C6 CSV's explicit cam=6 references S23, not S17 cam=5."""
+    import csv
+    root = tmp_path
+    directory = root / "calibration" / "external" / "matrix"
+    directory.mkdir(parents=True)
+    preferred = _K().copy()
+    preferred[0, 0] = 1526.
+    fallback = _K().copy()
+    fallback[0, 0] = 1524.
+    np.savez(directory/"SS23_G65_from_C6_row.npz",
+             mtx_A=preferred, dist_A=np.zeros((1,5)))
+    np.savez(directory/"SS17_G65_from_C5_row.npz",
+             mtx_A=fallback, dist_A=np.zeros((1,5)))
+    with (root/"calibration"/"external_calibration.csv").open(
+        "w", encoding="utf-8", newline="") as file:
+        writer = csv.DictWriter(file, fieldnames=[
+            "subject", "main", "main_link", "cam", "path"])
+        writer.writeheader()
+        writer.writerow({
+            "subject":"S17","main":"6","main_link":"True","cam":"6",
+            "path":"calibration/external/matrix/SS23_G65_from_C6_row.npz"})
+        writer.writerow({
+            "subject":"S17","main":"6","main_link":"True","cam":"5",
+            "path":"calibration/external/matrix/SS17_G65_from_C5_row.npz"})
+    K, distort, meta = calibration_intrinsics_with_provenance(root,"S17","C6")
+    assert K[0,0] == pytest.approx(1526.)
+    assert meta["source_csv_cross_group_filename_reference"] is True
+    assert meta["selected_from_explicit_main_camera_csv_row"] is True
+    assert meta["selected_matrix_filename_matches_target_group"] is False
+    assert calibration_intrinsics(root,"S17","C6")[0][0,0] == 1526.
+
+
+def test_multiple_distinct_main_camera_paths_fail_closed(tmp_path):
+    root = tmp_path
+    (root/"calibration").mkdir()
+    with (root/"calibration"/"external_calibration.csv").open(
+        "w", encoding="utf-8", newline="") as file:
+        writer=csv.DictWriter(file,fieldnames=[
+            "subject","main","main_link","cam","path"])
+        writer.writeheader()
+        for name in ("SS17_G65_one.npz","SS17_G65_two.npz"):
+            writer.writerow({
+                "subject":"S17","main":"6","main_link":"True","cam":"6",
+                "path":"calibration/external/matrix/"+name})
+    with pytest.raises(ValueError,match="multiple matrix paths"):
+        calibration_intrinsics_with_provenance(root,"S17","C6")

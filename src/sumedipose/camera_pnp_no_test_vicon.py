@@ -41,33 +41,47 @@ MIN_HELDOUT_VALID_FRAMES = 6
 REFERENCE_PROJECTION_WARNING_P90_PX = 20.0
 
 
-def calibration_intrinsics(root: Path, group: str, camera: str):
-    """Use the source CSV's preselected main-camera calibration, no GT-based pick.
+def calibration_intrinsics_with_provenance(root: Path, group: str, camera: str):
+    """Resolve source CSV by its actual camera role, not filename subject.
 
-    In G12, camera 1 is stereo main (the CSV row may be for cam=2).
-    In G65, camera 6 is stereo main. Both use mtx_A/dist_A.
-    Reject any CSV path whose matrix filename belongs to another group;
-    the released S17/C6 CSV includes a cross-group path for S23.
+    For G12 main C1 and G65 main C6, prefer the row whose `cam` is
+    the main camera; use the stereo partner's row only when the main
+    camera has no own row. Reject multiple distinct selected paths.
+    If a CSV explicitly references another group's matrix filename
+    (as S17/C6 does for S23), preserve and FLAG the source provenance;
+    do not silently select a group-matching filename or choose on GT error.
     """
+    import re
     if group not in ANCHORS or camera not in PAIR_BY_CAMERA:
         raise ValueError("Unexpected source group or camera")
     pair, main_id = PAIR_BY_CAMERA[camera]
     source = root / "calibration" / "external_calibration.csv"
     with source.open("r", encoding="utf-8-sig", newline="") as f:
         rows = list(csv.DictReader(f))
-    candidates = {r["path"] for r in rows
-                  if r["subject"] == group
-                  and r["main"] == main_id
-                  and f"_{pair}_" in r["path"]
-                  and Path(r["path"]).name.startswith(f"S{group}_{pair}_")
-                  and r["main_link"].lower() in ("true", "false")}
-    if len(candidates) != 1:
-        raise ValueError("Camera intrinsics cannot be identified uniquely from calibration CSV")
-    rel = next(iter(candidates))
+    candidates = [
+        r for r in rows
+        if r.get("subject") == group
+        and str(r.get("main")) == main_id
+        and f"_{pair}_" in str(r.get("path", ""))
+        and str(r.get("main_link", "")).lower() in ("true", "false")
+    ]
+    if not candidates:
+        raise ValueError("No source camera calibration CSV rows for group/view")
+    direct = [r for r in candidates if str(r.get("cam")) == main_id]
+    selected = direct if direct else candidates
+    paths = {str(r["path"]) for r in selected}
+    if len(paths) != 1:
+        raise ValueError("Ambiguous source camera role has multiple matrix paths")
+    rel = next(iter(paths))
+    file_name = Path(rel).name
+    match = re.match(r"^SS(\d+)_G(12|65)_", file_name)
+    if not match or "G" + match.group(2) != pair:
+        raise ValueError("Unrecognized source stereo calibration filename provenance")
+    selected_group = "S" + match.group(1)
     path = (root / rel).resolve()
     if (root.resolve() not in path.parents or
             path.suffix.lower() != ".npz" or not path.is_file()):
-        raise ValueError("Unexpected source calibration matrix path")
+        raise ValueError("Source CSV path escapes trusted calibration root")
     with np.load(path, allow_pickle=False) as data:
         K = np.asarray(data["mtx_A"], dtype=float)
         distortion = np.asarray(data["dist_A"], dtype=float)
@@ -75,8 +89,21 @@ def calibration_intrinsics(root: Path, group: str, camera: str):
             not np.isfinite(K).all() or not np.isfinite(distortion).all()
             or K[0, 0] <= 0 or K[1, 1] <= 0 or abs(K[2, 2]-1) > 1e-8):
         raise ValueError("Malformed source camera intrinsics")
-    return K, distortion
+    provenance = {
+        "selected_from_explicit_main_camera_csv_row": bool(direct),
+        "selected_matrix_filename_matches_target_group": selected_group == group,
+        "source_csv_cross_group_filename_reference": selected_group != group,
+        "main_camera_id": main_id,
+        "csv_selected_camera_id": main_id if direct else str(selected[0].get("cam")),
+        "physical_optical_calibration_independently_verified": False,
+    }
+    return K, distortion, provenance
 
+
+def calibration_intrinsics(root: Path, group: str, camera: str):
+    """Backward-compatible K/distortion accessor, same source-role rule."""
+    K, distortion, _ = calibration_intrinsics_with_provenance(root, group, camera)
+    return K, distortion
 
 def training_group_scale(frames):
     """Group median GT-CCS/metre femur ratio, TRAINING ONLY."""
@@ -374,7 +401,7 @@ def run(root, models_dir, analysis_dir, detail_path, aggregate_path):
     private_rows=[]
     attempt_images=0;detected_poses=0
     for camera in CAMERAS:
-        Ks={g:calibration_intrinsics(root,g,camera) for g in ANCHORS}
+        Ks={g:calibration_intrinsics_with_provenance(root,g,camera) for g in ANCHORS}
         for model in VARIANTS:
             source={}
             for s in ALL26:
@@ -395,6 +422,7 @@ def run(root, models_dir, analysis_dir, detail_path, aggregate_path):
                 fold={"heldout_group":group,"camera":camera,"model":model,
                     "calibration_group_used_only_for_target_intrinsics":True,
                     "scale_fitted_only_on_other_four_groups":True,
+                    "source_camera_calibration_provenance":Ks[group][2],
                     "training_source_units_per_model_m":round(scale,6),
                     "A3":None,"A4":None}
                 for action in ("A3","A4"):
@@ -403,7 +431,7 @@ def run(root, models_dir, analysis_dir, detail_path, aggregate_path):
                     quality_errors=[]
                     for person in people:
                         recording=source[person][action]
-                        K,dist=Ks[group]
+                        K,dist,provenance=Ks[group]
                         errors=camera_projection_consistency(recording["frames"],K,dist)
                         quality_errors.extend(errors)
                         scoring=test_recording(recording["frames"],K,dist,scale,action=action)
